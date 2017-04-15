@@ -212,8 +212,7 @@ public class MasterImpl implements Master {
     public void collectDataFromReducer() {
         Map<GeoPointPair, List<DirectionsResult>> result = null;
         try {
-            result =
-                    (Map<GeoPointPair, List<DirectionsResult>>) objectInputStreamFromMoscow.readObject();
+            result = (Map<GeoPointPair, List<DirectionsResult>>) objectInputStreamFromMoscow.readObject();
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
@@ -223,7 +222,11 @@ public class MasterImpl implements Master {
     }
 
     private DirectionsResult calculateEuclideanMin(Map<GeoPointPair, List<DirectionsResult>> result) {
-        return null;
+        if (result.isEmpty()) {
+            return null;
+        } else {
+            return null;
+        }
     }
 
 

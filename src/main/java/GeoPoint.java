@@ -17,6 +17,10 @@ public final class GeoPoint implements Serializable {
         return longitude;
     }
 
+    double euclideanDistance(GeoPoint other) {
+        return Math.sqrt((Math.pow((latitude - other.latitude), 2) + Math.pow((longitude - other.longitude), 2)));
+    }
+
     @Override
     public String toString() {
         return "GeoPoint [ Latitude = " + latitude + ", Longitude = " + longitude + "]";

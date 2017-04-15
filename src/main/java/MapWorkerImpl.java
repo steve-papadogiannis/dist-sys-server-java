@@ -14,6 +14,7 @@ import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -61,10 +62,11 @@ public class MapWorkerImpl implements MapWorker{
         try {
             while ((mapTask = (MapTask) objectInputStream.readObject()) != null) {
                 System.out.println(name + " received " + mapTask);
-                final Map<GeoPointPair, DirectionsResult> map =
+                final Map<GeoPointPair, List<DirectionsResult>> map =
                         map(mapTask.getStartGeopoint(), mapTask.getEndGeoPoint());
                 sendToReducers(map);
                 notifyMaster();
+                break;
             }
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
@@ -72,7 +74,7 @@ public class MapWorkerImpl implements MapWorker{
     }
 
     @Override
-    public Map<GeoPointPair, DirectionsResult> map(Object obj1, Object obj2) {
+    public Map<GeoPointPair, List<DirectionsResult>> map(GeoPoint obj1, GeoPoint obj2) {
         final Mongo mongo = new Mongo("127.0.0.1", 27017);
         final DB db = mongo.getDB("local");
         final DBCollection dbCollection = db.getCollection("directions");
@@ -84,11 +86,26 @@ public class MapWorkerImpl implements MapWorker{
            list.add(cursor.next());
         }
         final long ipPortHash = calculateHash(socket.getInetAddress().toString() + socket.getPort());
-        final List<DirectionsResultWrapper> filteredDirectionsResultWrappers = list.stream()
+        final List<DirectionsResultWrapper> resultsThatThisWorkerIsInChargeOf = list.stream()
             .filter(x -> calculateHash(String.valueOf(x.getStartPoint().getLatitude()) +
             String.valueOf(x.getStartPoint().getLongitude()) + String.valueOf(x.getEndPoint().getLatitude()) +
             String.valueOf(x.getEndPoint().getLongitude())) % 4 < ipPortHash).collect(Collectors.toList());
-        return null;
+        final List<DirectionsResultWrapper> filteredDirectionsResults = resultsThatThisWorkerIsInChargeOf
+                .stream().filter(x -> x.getStartPoint().euclideanDistance(obj1) < 0.1 &&
+                        x.getEndPoint().euclideanDistance(obj2) < 0.1)
+                .collect(Collectors.toList());
+        final Map<GeoPointPair, List<DirectionsResult>> mapToReturn = new HashMap<>();
+        filteredDirectionsResults.forEach(x -> {
+            final GeoPointPair geoPointPair = new GeoPointPair(x.getStartPoint(), x.getEndPoint());
+            if (mapToReturn.containsKey(geoPointPair)) {
+                mapToReturn.get(geoPointPair).add(x.getDirectionsResult());
+            } else {
+                final List<DirectionsResult> value = new ArrayList<>();
+                value.add(x.getDirectionsResult());
+                mapToReturn.put(geoPointPair, value);
+            }
+        });
+        return mapToReturn;
     }
 
     @Override
@@ -121,7 +138,7 @@ public class MapWorkerImpl implements MapWorker{
     }
 
     @Override
-    public void sendToReducers(Map<GeoPointPair, DirectionsResult> map) {
+    public void sendToReducers(Map<GeoPointPair, List<DirectionsResult>> map) {
         System.out.println("Sending ack to reduce worker " + ApplicationConstants.MOSCOW + " ... ");
         try {
             if (objectOutputStreamToMoscow == null) {

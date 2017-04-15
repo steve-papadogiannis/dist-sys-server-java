@@ -14,7 +14,7 @@ public final class ReduceWorkerImpl implements ReduceWorker {
     private final int port;
     private ObjectInputStream objectInputStream;
     private ObjectOutputStream objectOutputStream;
-    private Map<GeoPointPair, List<DirectionsResult>> forReduceMap = new HashMap<>();
+    private Map<GeoPointPair, List<DirectionsResult>> mapToReturn = new HashMap<>();
 
     ReduceWorkerImpl(String name, int port) {
         System.out.println("ReduceWorker " + name + " was created.");
@@ -33,8 +33,14 @@ public final class ReduceWorkerImpl implements ReduceWorker {
     }
 
     @Override
-    public void sendResults(Map<Integer, Object> map) {
-
+    public void sendResults(Map<GeoPointPair, List<DirectionsResult>> map) {
+        System.out.println("Sending ack to reduce worker " + ApplicationConstants.MOSCOW + " ... ");
+        try {
+            objectOutputStream.writeObject(mapToReturn);
+            objectOutputStream.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -61,10 +67,16 @@ public final class ReduceWorkerImpl implements ReduceWorker {
                 if (incomingObject instanceof String) {
                     final String inputLine = (String) incomingObject;
                     System.out.println(name + " received " + inputLine);
+                    if (inputLine.equals("ack")) {
+                        sendResults(mapToReturn);
+                    }
+                    break;
                 } else if (incomingObject instanceof Map) {
-                    final Map<GeoPointPair, DirectionsResult> casObject
-                            = (Map<GeoPointPair, DirectionsResult>) incomingObject;
-                    System.out.println(name + " received " + casObject);
+                    final Map<GeoPointPair, List<DirectionsResult>> incoming
+                            = (Map<GeoPointPair, List<DirectionsResult>>) incomingObject;
+                    mapToReturn.putAll(incoming);
+                    System.out.println(name + " received " + incoming);
+                    break;
                 }
             }
         } catch (IOException | ClassNotFoundException e) {
