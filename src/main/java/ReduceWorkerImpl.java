@@ -1,6 +1,4 @@
 import com.google.maps.model.DirectionsResult;
-import javafx.util.Pair;
-
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -16,7 +14,7 @@ public final class ReduceWorkerImpl implements ReduceWorker {
     private final int port;
     private ObjectInputStream objectInputStream;
     private ObjectOutputStream objectOutputStream;
-    private Map<Pair<GeoPoint, GeoPoint>, List<DirectionsResult>> forReduceMap = new HashMap<>();
+    private Map<GeoPointPair, List<DirectionsResult>> forReduceMap = new HashMap<>();
 
     ReduceWorkerImpl(String name, int port) {
         System.out.println("ReduceWorker " + name + " was created.");
@@ -64,8 +62,8 @@ public final class ReduceWorkerImpl implements ReduceWorker {
                     final String inputLine = (String) incomingObject;
                     System.out.println(name + " received " + inputLine);
                 } else if (incomingObject instanceof Map) {
-                    final Map<Pair<GeoPoint, GeoPoint>, DirectionsResult> casObject
-                            = (Map<Pair<GeoPoint, GeoPoint>, DirectionsResult>) incomingObject;
+                    final Map<GeoPointPair, DirectionsResult> casObject
+                            = (Map<GeoPointPair, DirectionsResult>) incomingObject;
                     System.out.println(name + " received " + casObject);
                 }
             }

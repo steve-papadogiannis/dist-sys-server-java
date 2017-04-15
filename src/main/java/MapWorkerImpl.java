@@ -2,7 +2,6 @@ import com.google.maps.model.DirectionsResult;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.Mongo;
-import javafx.util.Pair;
 import org.mongojack.DBCursor;
 import org.mongojack.JacksonDBCollection;
 import java.io.IOException;
@@ -62,7 +61,7 @@ public class MapWorkerImpl implements MapWorker{
         try {
             while ((mapTask = (MapTask) objectInputStream.readObject()) != null) {
                 System.out.println(name + " received " + mapTask);
-                final Map<Pair<GeoPoint, GeoPoint>, DirectionsResult> map =
+                final Map<GeoPointPair, DirectionsResult> map =
                         map(mapTask.getStartGeopoint(), mapTask.getEndGeoPoint());
                 sendToReducers(map);
                 notifyMaster();
@@ -73,7 +72,7 @@ public class MapWorkerImpl implements MapWorker{
     }
 
     @Override
-    public Map<Pair<GeoPoint, GeoPoint>, DirectionsResult> map(Object obj1, Object obj2) {
+    public Map<GeoPointPair, DirectionsResult> map(Object obj1, Object obj2) {
         final Mongo mongo = new Mongo("127.0.0.1", 27017);
         final DB db = mongo.getDB("local");
         final DBCollection dbCollection = db.getCollection("directions");
@@ -122,7 +121,7 @@ public class MapWorkerImpl implements MapWorker{
     }
 
     @Override
-    public void sendToReducers(Map<Pair<GeoPoint, GeoPoint>, DirectionsResult> map) {
+    public void sendToReducers(Map<GeoPointPair, DirectionsResult> map) {
         System.out.println("Sending ack to reduce worker " + ApplicationConstants.MOSCOW + " ... ");
         try {
             if (objectOutputStreamToMoscow == null) {

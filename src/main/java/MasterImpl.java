@@ -6,7 +6,6 @@ import com.google.maps.model.LatLng;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.Mongo;
-import javafx.util.Pair;
 import org.mongojack.JacksonDBCollection;
 import org.mongojack.WriteResult;
 import java.io.IOException;
@@ -79,7 +78,7 @@ public class MasterImpl implements Master {
 
     @Override
     public Directions searchCache(GeoPoint startGeoPoint, GeoPoint endGeoPoint) {
-        final Directions memCachedDirections = memCache.getDirections(new Pair<>(startGeoPoint, endGeoPoint));
+        final Directions memCachedDirections = memCache.getDirections(new GeoPointPair(startGeoPoint, endGeoPoint, startGeoPoint1, endGeoPoint1));
         if (memCachedDirections == null) {
             distributeToMappers(startGeoPoint, endGeoPoint);
             final Directions googleDirectionsAPI = askGoogleDirectionsAPI(startGeoPoint, endGeoPoint);
@@ -222,7 +221,7 @@ public class MasterImpl implements Master {
 
     @Override
     public boolean updateCache(GeoPoint startGeoPoint, GeoPoint endGeoPoint, Directions directions) {
-        memCache.insertDirections(new Pair<>(startGeoPoint, endGeoPoint), directions);
+        memCache.insertDirections(new GeoPointPair(startGeoPoint, endGeoPoint, startGeoPoint1, endGeoPoint1), directions);
         return true;
     }
 
