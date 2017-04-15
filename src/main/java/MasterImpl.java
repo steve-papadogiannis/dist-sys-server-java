@@ -13,6 +13,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.text.DecimalFormat;
+import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 
 public class MasterImpl implements Master {
@@ -23,6 +25,7 @@ public class MasterImpl implements Master {
                                objectOutputStreamToSaoPaolo, objectOutputStreamToMoscow;
     private ObjectInputStream objectInputStreamFromAthens, objectInputStreamFromJamaica, objectInputStreamFromHavana,
                               objectInputStreamFromSaoPaolo, objectInputStreamFromMoscow;
+    private DirectionsResult resultOfMapReduce = null;
 
     @Override
     public void initialize() {
@@ -77,12 +80,18 @@ public class MasterImpl implements Master {
     }
 
     @Override
-    public Directions searchCache(GeoPoint startGeoPoint, GeoPoint endGeoPoint) {
-        final Directions memCachedDirections = memCache.getDirections(new GeoPointPair(startGeoPoint, endGeoPoint));
+    public DirectionsResult searchCache(GeoPoint startGeoPoint, GeoPoint endGeoPoint) {
+        final DirectionsResult memCachedDirections = memCache.getDirections(new GeoPointPair(startGeoPoint, endGeoPoint));
         if (memCachedDirections == null) {
             distributeToMappers(startGeoPoint, endGeoPoint);
-            final Directions googleDirectionsAPI = askGoogleDirectionsAPI(startGeoPoint, endGeoPoint);
-            return null;
+            if (resultOfMapReduce == null) {
+                final DirectionsResult googleDirectionsAPI = askGoogleDirectionsAPI(startGeoPoint, endGeoPoint);
+                updateCache(startGeoPoint, endGeoPoint, googleDirectionsAPI);
+                updateDatabase(startGeoPoint, endGeoPoint, googleDirectionsAPI);
+                return googleDirectionsAPI;
+            } else {
+                return resultOfMapReduce;
+            }
         } else {
             return memCachedDirections;
         }
@@ -196,31 +205,45 @@ public class MasterImpl implements Master {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        collectDataFromReducer();
     }
 
     @Override
     public void collectDataFromReducer() {
-
-    }
-
-    @Override
-    public Directions askGoogleDirectionsAPI(GeoPoint startGeoPoint, GeoPoint endGeoPoint) {
-        GeoApiContext geoApiContext = new GeoApiContext();
-        geoApiContext.setApiKey(ApplicationConstants.DIRECTIONS_API_KEY);
+        Map<GeoPointPair, List<DirectionsResult>> result = null;
         try {
-            final DirectionsResult directionsResult = DirectionsApi.newRequest(geoApiContext).origin(new LatLng(startGeoPoint.getLatitude(),
-                    startGeoPoint.getLongitude())).destination(new LatLng(endGeoPoint.getLatitude(),
-                    endGeoPoint.getLongitude())).await();
-            updateDatabase(startGeoPoint, endGeoPoint, directionsResult);
-
-        } catch (ApiException | InterruptedException | IOException e) {
+            result =
+                    (Map<GeoPointPair, List<DirectionsResult>>) objectInputStreamFromMoscow.readObject();
+        } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
+        if (result != null) {
+            resultOfMapReduce = calculateEuclideanMin(result);
+        }
+    }
+
+    private DirectionsResult calculateEuclideanMin(Map<GeoPointPair, List<DirectionsResult>> result) {
         return null;
     }
 
+
     @Override
-    public boolean updateCache(GeoPoint startGeoPoint, GeoPoint endGeoPoint, Directions directions) {
+    public DirectionsResult askGoogleDirectionsAPI(GeoPoint startGeoPoint, GeoPoint endGeoPoint) {
+        GeoApiContext geoApiContext = new GeoApiContext();
+        geoApiContext.setApiKey(ApplicationConstants.DIRECTIONS_API_KEY);
+        DirectionsResult directionsResult = null;
+        try {
+           directionsResult = DirectionsApi.newRequest(geoApiContext).origin(new LatLng(startGeoPoint.getLatitude(),
+                    startGeoPoint.getLongitude())).destination(new LatLng(endGeoPoint.getLatitude(),
+                    endGeoPoint.getLongitude())).await();
+        } catch (ApiException | InterruptedException | IOException e) {
+            e.printStackTrace();
+        }
+        return directionsResult;
+    }
+
+    @Override
+    public boolean updateCache(GeoPoint startGeoPoint, GeoPoint endGeoPoint, DirectionsResult directions) {
         memCache.insertDirections(new GeoPointPair(startGeoPoint, endGeoPoint), directions);
         return true;
     }

@@ -6,7 +6,7 @@ public interface Master {
 
     void waitForNewQueriesThread();
 
-    Directions searchCache(GeoPoint startGeoPoint, GeoPoint endGeoPoint);
+    DirectionsResult searchCache(GeoPoint startGeoPoint, GeoPoint endGeoPoint);
 
     void distributeToMappers(GeoPoint startGeoPoint, GeoPoint endGeoPoint);
 
@@ -16,9 +16,9 @@ public interface Master {
 
     void collectDataFromReducer();
 
-    Directions askGoogleDirectionsAPI(GeoPoint startGeoPoint, GeoPoint endGeoPoint);
+    DirectionsResult askGoogleDirectionsAPI(GeoPoint startGeoPoint, GeoPoint endGeoPoint);
 
-    boolean updateCache(GeoPoint startGeoPoint, GeoPoint endGeoPoint, Directions directions);
+    boolean updateCache(GeoPoint startGeoPoint, GeoPoint endGeoPoint, DirectionsResult directions);
 
     boolean updateDatabase(GeoPoint startGeoPoint, GeoPoint endGeoPoint, DirectionsResult directions);
 
