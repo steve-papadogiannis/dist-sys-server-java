@@ -1,20 +1,36 @@
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.io.Serializable;
 
 public final class GeoPoint implements Serializable {
 
-    private final double latitude, longitude;
+    private double latitude, longitude;
 
     GeoPoint(double latitude, double longitude) {
         this.latitude = latitude;
         this.longitude = longitude;
     }
 
+    GeoPoint() {}
+
+    @JsonProperty("latitude")
     double getLatitude() {
         return latitude;
     }
 
+    @JsonProperty("longitude")
     double getLongitude() {
         return longitude;
+    }
+
+    @JsonProperty("latitude")
+    void setLatitude(double latitude) {
+        this.latitude = latitude;
+    }
+
+    @JsonProperty("longitude")
+    void setLongitude(double longitude) {
+        this.longitude = longitude;
     }
 
     double euclideanDistance(GeoPoint other) {

@@ -1,4 +1,6 @@
-final class GeoPointPair {
+import java.io.Serializable;
+
+final class GeoPointPair implements Serializable {
 
     private final GeoPoint startGeoPoint;
     private final GeoPoint endGeoPoint;

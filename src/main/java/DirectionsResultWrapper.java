@@ -1,12 +1,10 @@
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.maps.model.DirectionsResult;
 import org.mongojack.ObjectId;
 
-import java.io.Serializable;
+final class DirectionsResultWrapper {
 
-final class DirectionsResultWrapper implements Serializable {
-
-    @ObjectId
-    private String _id;
+    private String id;
 
     private GeoPoint startPoint;
 
@@ -22,34 +20,43 @@ final class DirectionsResultWrapper implements Serializable {
         this.directionsResult = directionsResult;
     }
 
+    @JsonProperty("startPoint")
     public void setStartPoint(GeoPoint startPoint) {
         this.startPoint = startPoint;
     }
 
+    @JsonProperty("endPoint")
     public void setEndPoint(GeoPoint endPoint) {
         this.endPoint = endPoint;
     }
 
-    public String get_id() {
-        return _id;
+    @ObjectId
+    @JsonProperty("_id")
+    public String getId() {
+        return id;
+    }
+    @ObjectId
+    @JsonProperty("_id")
+    public void setId(String id) {
+        this.id = id;
     }
 
-    public void set_id(String _id) {
-        this._id = _id;
-    }
-
+    @JsonProperty("directionsResult")
     public void setDirectionsResult(DirectionsResult directionsResult) {
         this.directionsResult = directionsResult;
     }
 
+    @JsonProperty("startPoint")
     GeoPoint getStartPoint() {
         return startPoint;
     }
 
+    @JsonProperty("endPoint")
     GeoPoint getEndPoint() {
         return endPoint;
     }
 
+    @JsonProperty("directionsResult")
     DirectionsResult getDirectionsResult() {
         return directionsResult;
     }

@@ -63,8 +63,8 @@ public class MasterImpl implements Master {
                         "You asked directions between : (%f, %f), (%f, %f)",
                         truncatedStartLatitude, truncatedStartLongitude,
                         truncatedEndLatitude, truncatedEndLongitude));
-                searchCache(new GeoPoint(truncatedStartLatitude, truncatedStartLongitude),
-                            new GeoPoint(truncatedEndLatitude, truncatedEndLongitude));
+                System.out.println(searchCache(new GeoPoint(truncatedStartLatitude, truncatedStartLongitude),
+                            new GeoPoint(truncatedEndLatitude, truncatedEndLongitude)));
             }
         }
         tearDownApplication();
