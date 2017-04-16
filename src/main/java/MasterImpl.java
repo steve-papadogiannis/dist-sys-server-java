@@ -13,6 +13,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.text.DecimalFormat;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
@@ -26,6 +27,8 @@ public class MasterImpl implements Master {
     private ObjectInputStream objectInputStreamFromAthens, objectInputStreamFromJamaica, objectInputStreamFromHavana,
                               objectInputStreamFromSaoPaolo, objectInputStreamFromMoscow;
     private DirectionsResult resultOfMapReduce = null;
+    private double truncatedStartLatitude = 38.06, truncatedStartLongitude = 23.80, truncatedEndLatitude = 38.04,
+        truncatedEndLongitude = 23.80;
 
     @Override
     public void initialize() {
@@ -55,10 +58,10 @@ public class MasterImpl implements Master {
                 final double endLatitude = input.nextDouble();
                 System.out.print("Enter your end point longitude: ");
                 final double endLongitude = input.nextDouble();
-                final double truncatedStartLatitude = roundTo2Decimals(startLatitude);
-                final double truncatedStartLongitude = roundTo2Decimals(startLongitude);
-                final double truncatedEndLatitude = roundTo2Decimals(endLatitude);
-                final double truncatedEndLongitude = roundTo2Decimals(endLongitude);
+                truncatedStartLatitude = roundTo2Decimals(startLatitude);
+                truncatedStartLongitude = roundTo2Decimals(startLongitude);
+                truncatedEndLatitude = roundTo2Decimals(endLatitude);
+                truncatedEndLongitude = roundTo2Decimals(endLongitude);
                 System.out.println(String.format(
                         "You asked directions between : (%f, %f), (%f, %f)",
                         truncatedStartLatitude, truncatedStartLongitude,
@@ -225,10 +228,48 @@ public class MasterImpl implements Master {
         if (result.isEmpty()) {
             return null;
         } else {
-            return null;
+            Map.Entry<GeoPointPair, List<DirectionsResult>> min = null;
+            final GeoPoint startGeoPoint = new GeoPoint(truncatedStartLatitude, truncatedStartLongitude);
+            final GeoPoint endGeoPoint = new GeoPoint(truncatedEndLatitude, truncatedEndLongitude);
+            for (Map.Entry<GeoPointPair, List<DirectionsResult>> entry : result.entrySet()) {
+                if (min == null ||
+                    min.getKey().getStartGeoPoint().euclideanDistance(startGeoPoint) +
+                    min.getKey().getEndGeoPoint().euclideanDistance(endGeoPoint) >
+                    entry.getKey().getStartGeoPoint().euclideanDistance(startGeoPoint) +
+                    entry.getKey().getEndGeoPoint().euclideanDistance(endGeoPoint)) {
+                        min = entry;
+                }
+            }
+            final List<DirectionsResult> minDirectionsResultList = min != null ? min.getValue() : null;
+            if (minDirectionsResultList != null && !minDirectionsResultList.isEmpty()) {
+                DirectionsResult minDirectionsResult = null;
+                for (DirectionsResult directionsResult : minDirectionsResultList) {
+                    if (minDirectionsResult == null) {
+                        minDirectionsResult = directionsResult;
+                    } else {
+                        final long[] totalDurationOfMin = {0};
+                        final long[] totalDurationOfIteratee = {0};
+                        Arrays.stream(minDirectionsResult.routes).forEach(x -> {
+                            Arrays.stream(x.legs).forEach(y -> {
+                                totalDurationOfMin[0] += y.duration.inSeconds;
+                            });
+                        });
+                        Arrays.stream(directionsResult.routes).forEach(x -> {
+                            Arrays.stream(x.legs).forEach(y -> {
+                                totalDurationOfIteratee[0] += y.duration.inSeconds;
+                            });
+                        });
+                        if (totalDurationOfIteratee[0] < totalDurationOfMin[0]) {
+                            minDirectionsResult = directionsResult;
+                        }
+                    }
+                }
+                return minDirectionsResult;
+            } else {
+                return null;
+            }
         }
     }
-
 
     @Override
     public DirectionsResult askGoogleDirectionsAPI(GeoPoint startGeoPoint, GeoPoint endGeoPoint) {

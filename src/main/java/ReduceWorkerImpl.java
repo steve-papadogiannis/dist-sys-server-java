@@ -28,13 +28,19 @@ public final class ReduceWorkerImpl implements ReduceWorker {
     }
 
     @Override
-    public Map<String, Object> reduce(String string, Object obj1) {
-        return null;
+    public void reduce(Map<GeoPointPair, List<DirectionsResult>> incoming) {
+        incoming.forEach((x,y) -> {
+            if (mapToReturn.containsKey(x)) {
+                mapToReturn.get(x).addAll(y);
+            } else {
+                mapToReturn.put(x, y);
+            }
+        });
     }
 
     @Override
     public void sendResults(Map<GeoPointPair, List<DirectionsResult>> map) {
-        System.out.println("Sending result to master from " + ApplicationConstants.MOSCOW + " ... ");
+        System.out.println("Sending result " + mapToReturn + " to master from " + ApplicationConstants.MOSCOW + " ... ");
         try {
             objectOutputStream.writeObject(mapToReturn);
             objectOutputStream.flush();
@@ -74,7 +80,7 @@ public final class ReduceWorkerImpl implements ReduceWorker {
                 } else if (incomingObject instanceof Map) {
                     final Map<GeoPointPair, List<DirectionsResult>> incoming
                             = (Map<GeoPointPair, List<DirectionsResult>>) incomingObject;
-                    mapToReturn.putAll(incoming);
+                    reduce(incoming);
                     System.out.println(name + " received " + incoming);
                     break;
                 }
