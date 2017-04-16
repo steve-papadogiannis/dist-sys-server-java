@@ -11,6 +11,7 @@ import org.mongojack.WriteResult;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.text.DecimalFormat;
 import java.util.Arrays;
@@ -29,6 +30,9 @@ public class MasterImpl implements Master {
     private DirectionsResult resultOfMapReduce = null;
     private double truncatedStartLatitude = 38.06, truncatedStartLongitude = 23.80, truncatedEndLatitude = 38.04,
         truncatedEndLongitude = 23.80;
+    private Socket masterSocket;
+    private ObjectInputStream objectInputStreamFromAndroid;
+    private ObjectOutputStream objectOutputStreamToAndroid;
 
     @Override
     public void initialize() {
@@ -37,7 +41,41 @@ public class MasterImpl implements Master {
         new Thread(new MapWorkerImpl(ApplicationConstants.HAVANA, ApplicationConstants.HAVANA_PORT)).start();
         new Thread(new MapWorkerImpl(ApplicationConstants.SAO_PAOLO, ApplicationConstants.SAO_PAOLO_PORT)).start();
         new Thread(new ReduceWorkerImpl(ApplicationConstants.MOSCOW, ApplicationConstants.MOSCOW_PORT)).start();
+        waitForAndroidQueries();
         waitForNewQueriesThread();
+    }
+
+    private void waitForAndroidQueries() {
+        System.out.println("Master is waiting for android queries at port " + ApplicationConstants.MASTER_PORT + " ... ");
+        try {
+            final ServerSocket serverSocket = new ServerSocket(ApplicationConstants.MASTER_PORT);
+            while (true) {
+                masterSocket = serverSocket.accept();
+                objectInputStreamFromAndroid = new ObjectInputStream(masterSocket.getInputStream());
+                objectOutputStreamToAndroid = new ObjectOutputStream(masterSocket.getOutputStream());
+                processQuery();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void processQuery() {
+        Object incomingObject;
+        try {
+            while ((incomingObject = objectInputStreamFromAndroid.readObject()) != null) {
+                final String incoming = (String) incomingObject;
+                final String[] parts = incoming.split(" ");
+                final GeoPoint startGeoPoint = new GeoPoint(Double.parseDouble(parts[0]), Double.parseDouble(parts[1]));
+                final GeoPoint endGeoPoint = new GeoPoint(Double.parseDouble(parts[2]), Double.parseDouble(parts[3]));
+                final DirectionsResult result = searchCache(startGeoPoint, endGeoPoint);
+                objectOutputStreamToAndroid.writeObject(result);
+                objectOutputStreamToAndroid.flush();
+                break;
+            }
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override

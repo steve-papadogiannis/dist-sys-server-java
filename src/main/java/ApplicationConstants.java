@@ -5,6 +5,6 @@ class ApplicationConstants {
     static final String ATHENS = "ATHENS", JAMAICA = "JAMAICA", HAVANA = "HAVANA", SAO_PAOLO = "SAO_PAOLO",
                                MOSCOW = "MOSCOW";
     static final int ATHENS_PORT = 5555, JAMAICA_PORT = 5556, HAVANA_PORT = 5557, SAO_PAOLO_PORT = 5558,
-                            MOSCOW_PORT = 5559;
+                            MOSCOW_PORT = 5559, MASTER_PORT = 5554;
 
 }
