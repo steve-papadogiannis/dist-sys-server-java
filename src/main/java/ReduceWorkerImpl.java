@@ -34,7 +34,7 @@ public final class ReduceWorkerImpl implements ReduceWorker {
 
     @Override
     public void sendResults(Map<GeoPointPair, List<DirectionsResult>> map) {
-        System.out.println("Sending ack to reduce worker " + ApplicationConstants.MOSCOW + " ... ");
+        System.out.println("Sending result to master from " + ApplicationConstants.MOSCOW + " ... ");
         try {
             objectOutputStream.writeObject(mapToReturn);
             objectOutputStream.flush();

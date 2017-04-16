@@ -82,7 +82,7 @@ public class MapWorkerImpl implements MapWorker{
             DirectionsResultWrapper.class, String.class);
         final DBCursor<DirectionsResultWrapper> cursor = coll.find();
         final List<DirectionsResultWrapper> list = new ArrayList<>();
-        if (cursor.hasNext()) {
+        while (cursor.hasNext()) {
            list.add(cursor.next());
         }
         final long ipPortHash = calculateHash(socket.getInetAddress().toString() + socket.getPort());
@@ -139,7 +139,7 @@ public class MapWorkerImpl implements MapWorker{
 
     @Override
     public void sendToReducers(Map<GeoPointPair, List<DirectionsResult>> map) {
-        System.out.println("Sending ack to reduce worker " + ApplicationConstants.MOSCOW + " ... ");
+        System.out.println(name + " is sending " + map + " to reduce worker " + ApplicationConstants.MOSCOW + " ... ");
         try {
             if (objectOutputStreamToMoscow == null) {
                 openSocket(ApplicationConstants.MOSCOW_PORT);
