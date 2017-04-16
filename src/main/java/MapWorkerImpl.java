@@ -85,11 +85,17 @@ public class MapWorkerImpl implements MapWorker{
         while (cursor.hasNext()) {
            list.add(cursor.next());
         }
-        final long ipPortHash = calculateHash(socket.getInetAddress().toString() + socket.getPort());
+        final long ipPortHash = calculateHash("127.0.0.1" + socket.getLocalPort());
+        final long ipPortHashMod4 = ipPortHash % 4 < 0 ? (- (ipPortHash % 4)) : ipPortHash % 4;
         final List<DirectionsResultWrapper> resultsThatThisWorkerIsInChargeOf = list.stream()
-            .filter(x -> calculateHash(String.valueOf(x.getStartPoint().getLatitude()) +
-            String.valueOf(x.getStartPoint().getLongitude()) + String.valueOf(x.getEndPoint().getLatitude()) +
-            String.valueOf(x.getEndPoint().getLongitude())) % 4 < ipPortHash).collect(Collectors.toList());
+            .filter(x -> {
+                final long geoPointsHash = calculateHash(String.valueOf(x.getStartPoint().getLatitude()) +
+                                                                String.valueOf(x.getStartPoint().getLongitude()) +
+                                                                String.valueOf(x.getEndPoint().getLatitude()) +
+                                                                String.valueOf(x.getEndPoint().getLongitude()));
+                final long geoPointsHashMod4 = geoPointsHash % 4 < 0 ? (- (geoPointsHash % 4)) : geoPointsHash % 4;
+                return ipPortHashMod4 == geoPointsHashMod4;
+            }).collect(Collectors.toList());
         final List<DirectionsResultWrapper> filteredDirectionsResults = resultsThatThisWorkerIsInChargeOf
                 .stream().filter(x -> x.getStartPoint().euclideanDistance(obj1) < 0.1 &&
                         x.getEndPoint().euclideanDistance(obj2) < 0.1)
