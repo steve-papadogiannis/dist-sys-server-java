@@ -15,6 +15,7 @@ public final class ReduceWorkerImpl implements ReduceWorker {
     private ObjectInputStream objectInputStream;
     private ObjectOutputStream objectOutputStream;
     private Map<GeoPointPair, List<DirectionsResult>> mapToReturn = new HashMap<>();
+    private Socket socket;
 
     ReduceWorkerImpl(String name, int port) {
         System.out.println("ReduceWorker " + name + " was created.");
@@ -44,6 +45,7 @@ public final class ReduceWorkerImpl implements ReduceWorker {
         try {
             objectOutputStream.writeObject(mapToReturn);
             objectOutputStream.flush();
+            socket.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -52,13 +54,19 @@ public final class ReduceWorkerImpl implements ReduceWorker {
     @Override
     public void initialize() {
         System.out.println("ReducerWorker " + name + " is waiting for tasks at port " + port + " ... ");
+        ServerSocket serverSocket = null;
         try {
-            final ServerSocket serverSocket = new ServerSocket(port);
-            while(true) {
-                final Socket socket = serverSocket.accept();
-                objectInputStream = new ObjectInputStream(socket.getInputStream());
-                objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
-                waitForTasksThread();
+            serverSocket = new ServerSocket(port);
+            while (true) {
+                socket = null;
+                try {
+                    socket = serverSocket.accept();
+                    objectInputStream = new ObjectInputStream(socket.getInputStream());
+                    objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
+                    waitForTasksThread();
+                } catch (IOException ex) {
+                    // this request only; ignore
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();

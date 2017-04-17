@@ -27,7 +27,6 @@ public class MapWorkerImpl implements MapWorker{
     private ObjectOutputStream objectOutputStream;
     private Socket socket;
     private ObjectOutputStream objectOutputStreamToMoscow;
-    private ObjectInputStream objectInputStreamFromMoscow;
 
     MapWorkerImpl(String name, int port) {
         System.out.println("MapWorker " + name + " was created.");
@@ -43,13 +42,18 @@ public class MapWorkerImpl implements MapWorker{
     @Override
     public void initialize() {
         System.out.println("MapWorker " + name + " is waiting for tasks at port " + port + " ... ");
+        ServerSocket serverSocket = null;
         try {
-            final ServerSocket serverSocket = new ServerSocket(port);
+            serverSocket = new ServerSocket(port);
             while (true) {
-                socket = serverSocket.accept();
-                objectInputStream = new ObjectInputStream(socket.getInputStream());
-                objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
-                waitForTasksThread();
+                try {
+                    socket = serverSocket.accept();
+                    objectInputStream = new ObjectInputStream(socket.getInputStream());
+                    objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
+                    waitForTasksThread();
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -58,14 +62,17 @@ public class MapWorkerImpl implements MapWorker{
 
     @Override
     public void waitForTasksThread() {
-        MapTask mapTask = null;
+        Object incoming = null;
         try {
-            while ((mapTask = (MapTask) objectInputStream.readObject()) != null) {
-                System.out.println(name + " received " + mapTask);
-                final Map<GeoPointPair, List<DirectionsResult>> map =
-                        map(mapTask.getStartGeopoint(), mapTask.getEndGeoPoint());
-                sendToReducers(map);
-                notifyMaster();
+            while ((incoming =  objectInputStream.readObject()) != null) {
+                System.out.println(name + " received " + incoming);
+                if (incoming instanceof MapTask) {
+                    final MapTask mapTask = (MapTask) incoming;
+                    final Map<GeoPointPair, List<DirectionsResult>> map =
+                            map(mapTask.getStartGeopoint(), mapTask.getEndGeoPoint());
+                    sendToReducers(map);
+                    notifyMaster();
+                }
                 break;
             }
         } catch (IOException | ClassNotFoundException e) {
@@ -146,22 +153,12 @@ public class MapWorkerImpl implements MapWorker{
     @Override
     public void sendToReducers(Map<GeoPointPair, List<DirectionsResult>> map) {
         System.out.println(name + " is sending " + map + " to reduce worker " + ApplicationConstants.MOSCOW + " ... ");
+        Socket serverSocket = null;
         try {
-            if (objectOutputStreamToMoscow == null) {
-                openSocket(ApplicationConstants.MOSCOW_PORT);
-            }
+            serverSocket = new Socket(ApplicationConstants.LOCALHOST, ApplicationConstants.MOSCOW_PORT);
+            objectOutputStreamToMoscow = new ObjectOutputStream(serverSocket.getOutputStream());
             objectOutputStreamToMoscow.writeObject(map);
             objectOutputStreamToMoscow.flush();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void openSocket(int port) {
-        try {
-            final Socket serverSocket = new Socket(ApplicationConstants.LOCALHOST, port);
-            objectOutputStreamToMoscow = new ObjectOutputStream(serverSocket.getOutputStream());
-            objectInputStreamFromMoscow = new ObjectInputStream(serverSocket.getInputStream());
         } catch (IOException e) {
             e.printStackTrace();
         }
