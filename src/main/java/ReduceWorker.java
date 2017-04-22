@@ -7,7 +7,7 @@ public interface ReduceWorker extends Worker{
 
     void waitForMasterAck();
 
-    void reduce(Map<GeoPointPair, List<DirectionsResult>> incoming);
+    void reduce(List<Map<GeoPointPair, DirectionsResult>> incoming);
 
     void sendResults(Map<GeoPointPair, List<DirectionsResult>> map);
 

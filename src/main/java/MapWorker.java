@@ -5,12 +5,12 @@ import java.util.Map;
 
 public interface MapWorker extends Worker {
 
-    Map<GeoPointPair, List<DirectionsResult>> map(GeoPoint obj1, GeoPoint obj2);
+    List<Map<GeoPointPair, DirectionsResult>> map(GeoPoint obj1, GeoPoint obj2);
 
     void notifyMaster();
 
     long calculateHash(String string);
 
-    void sendToReducers(Map<GeoPointPair, List<DirectionsResult>> map);
+    void sendToReducers(List<Map<GeoPointPair, DirectionsResult>> map);
 
 }

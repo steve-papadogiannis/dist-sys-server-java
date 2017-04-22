@@ -13,6 +13,7 @@ import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -85,7 +86,7 @@ public class MapWorkerImpl implements MapWorker{
                 System.out.println(name + " received " + incoming);
                 if (incoming instanceof MapTask) {
                     final MapTask mapTask = (MapTask) incoming;
-                    final Map<GeoPointPair, List<DirectionsResult>> map =
+                    final List<Map<GeoPointPair, DirectionsResult>> map =
                             map(mapTask.getStartGeopoint(), mapTask.getEndGeoPoint());
                     sendToReducers(map);
                     notifyMaster();
@@ -120,7 +121,7 @@ public class MapWorkerImpl implements MapWorker{
     }
 
     @Override
-    public Map<GeoPointPair, List<DirectionsResult>> map(GeoPoint obj1, GeoPoint obj2) {
+    public List<Map<GeoPointPair, DirectionsResult>> map(GeoPoint obj1, GeoPoint obj2) {
         final Mongo mongo = new Mongo("127.0.0.1", 27017);
         final DB db = mongo.getDB("local");
         final DBCollection dbCollection = db.getCollection("directions");
@@ -142,22 +143,21 @@ public class MapWorkerImpl implements MapWorker{
                 final long geoPointsHashMod4 = geoPointsHash % 4 < 0 ? (- (geoPointsHash % 4)) : geoPointsHash % 4;
                 return ipPortHashMod4 == geoPointsHashMod4;
             }).collect(Collectors.toList());
-        final List<DirectionsResultWrapper> filteredDirectionsResults = resultsThatThisWorkerIsInChargeOf
-                .stream().filter(x -> x.getStartPoint().euclideanDistance(obj1) < 0.1 &&
-                        x.getEndPoint().euclideanDistance(obj2) < 0.1)
-                .collect(Collectors.toList());
-        final Map<GeoPointPair, List<DirectionsResult>> mapToReturn = new HashMap<>();
-        filteredDirectionsResults.forEach(x -> {
-            final GeoPointPair geoPointPair = new GeoPointPair(x.getStartPoint(), x.getEndPoint());
-            if (mapToReturn.containsKey(geoPointPair)) {
-                mapToReturn.get(geoPointPair).add(x.getDirectionsResult());
-            } else {
-                final List<DirectionsResult> value = new ArrayList<>();
-                value.add(x.getDirectionsResult());
-                mapToReturn.put(geoPointPair, value);
-            }
+        final List<Map<GeoPointPair, DirectionsResult>> result = new ArrayList<>();
+        resultsThatThisWorkerIsInChargeOf.forEach(x -> {
+            final Map<GeoPointPair, DirectionsResult> map = new HashMap<>();
+            final GeoPointPair geoPointPair = new GeoPointPair(
+                    new GeoPoint(
+                            roundTo2Decimals(x.getStartPoint().getLatitude()),
+                            roundTo2Decimals(x.getStartPoint().getLongitude())),
+                    new GeoPoint(
+                            roundTo2Decimals(x.getEndPoint().getLatitude()),
+                            roundTo2Decimals(x.getEndPoint().getLongitude())
+                    ));
+            map.put(geoPointPair, x.getDirectionsResult());
+            result.add(map);
         });
-        return mapToReturn;
+        return result;
     }
 
     @Override
@@ -190,7 +190,7 @@ public class MapWorkerImpl implements MapWorker{
     }
 
     @Override
-    public void sendToReducers(Map<GeoPointPair, List<DirectionsResult>> map) {
+    public void sendToReducers(List<Map<GeoPointPair, DirectionsResult>> map) {
         System.out.println(name + " is sending " + map + " to reduce worker " + ApplicationConstants.MOSCOW + " ... ");
         Socket serverSocket = null;
         try {
@@ -201,6 +201,11 @@ public class MapWorkerImpl implements MapWorker{
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private double roundTo2Decimals(double val) {
+        DecimalFormat decimalFormat = new DecimalFormat("###.##");
+        return Double.valueOf(decimalFormat.format(val));
     }
 
 }
