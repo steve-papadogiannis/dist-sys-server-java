@@ -41,13 +41,13 @@ public class MasterImpl implements Master {
         new Thread(new MapWorkerImpl(ApplicationConstants.HAVANA, ApplicationConstants.HAVANA_PORT)).start();
         new Thread(new MapWorkerImpl(ApplicationConstants.SAO_PAOLO, ApplicationConstants.SAO_PAOLO_PORT)).start();
         new Thread(new ReduceWorkerImpl(ApplicationConstants.MOSCOW, ApplicationConstants.MOSCOW_PORT)).start();
-        new Thread(new AndroidRunnable(this, ApplicationConstants.ANDROID, ApplicationConstants.ANDROID_PORT)).start();
+//        new Thread(new AndroidRunnable(this, ApplicationConstants.ANDROID, ApplicationConstants.ANDROID_PORT)).start();
         openSocket(ApplicationConstants.ATHENS_PORT);
         openSocket(ApplicationConstants.JAMAICA_PORT);
         openSocket(ApplicationConstants.HAVANA_PORT);
         openSocket(ApplicationConstants.SAO_PAOLO_PORT);
         openSocket(ApplicationConstants.MOSCOW_PORT);
-        openSocket(ApplicationConstants.ANDROID_PORT);
+//        openSocket(ApplicationConstants.ANDROID_PORT);
         waitForNewQueriesThread();
     }
 
@@ -101,8 +101,8 @@ public class MasterImpl implements Master {
             objectOutputStreamToSaoPaolo.flush();
             objectOutputStreamToMoscow.writeObject("exit");
             objectOutputStreamToMoscow.flush();
-            objectOutputStreamToAndroidForTermination.writeObject("exit");
-            objectOutputStreamToAndroidForTermination.flush();
+//            objectOutputStreamToAndroidForTermination.writeObject("exit");
+//            objectOutputStreamToAndroidForTermination.flush();
         } catch (IOException e) {
             e.printStackTrace();
         }

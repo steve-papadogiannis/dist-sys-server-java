@@ -47,7 +47,6 @@ public final class ReduceWorkerImpl implements ReduceWorker {
         try {
             objectOutputStream.writeObject(mapToReturn);
             objectOutputStream.flush();
-            socket.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
