@@ -27,6 +27,8 @@ public class MapWorkerImpl implements MapWorker{
     private ObjectOutputStream objectOutputStream;
     private Socket socket;
     private ObjectOutputStream objectOutputStreamToMoscow;
+    private boolean isNotFinished = true;
+    private ServerSocket serverSocket;
 
     MapWorkerImpl(String name, int port) {
         System.out.println("MapWorker " + name + " was created.");
@@ -37,15 +39,15 @@ public class MapWorkerImpl implements MapWorker{
     @Override
     public void run() {
         initialize();
+        System.out.println("MapWorker " + name + " is exiting...");
     }
 
     @Override
     public void initialize() {
         System.out.println("MapWorker " + name + " is waiting for tasks at port " + port + " ... ");
-        ServerSocket serverSocket = null;
         try {
             serverSocket = new ServerSocket(port);
-            while (true) {
+            while (isNotFinished) {
                 try {
                     socket = serverSocket.accept();
                     objectInputStream = new ObjectInputStream(socket.getInputStream());
@@ -57,6 +59,20 @@ public class MapWorkerImpl implements MapWorker{
             }
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            isNotFinished = false;
+            try {
+                if (objectOutputStream != null)
+                    objectInputStream.close();
+                if (objectOutputStream != null)
+                    objectOutputStream.close();
+                if (socket != null)
+                    socket.close();
+                if (serverSocket != null)
+                    serverSocket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -64,7 +80,8 @@ public class MapWorkerImpl implements MapWorker{
     public void waitForTasksThread() {
         Object incoming = null;
         try {
-            while ((incoming =  objectInputStream.readObject()) != null) {
+            while (isNotFinished) {
+                incoming = objectInputStream.readObject();
                 System.out.println(name + " received " + incoming);
                 if (incoming instanceof MapTask) {
                     final MapTask mapTask = (MapTask) incoming;
@@ -72,11 +89,33 @@ public class MapWorkerImpl implements MapWorker{
                             map(mapTask.getStartGeopoint(), mapTask.getEndGeoPoint());
                     sendToReducers(map);
                     notifyMaster();
+                } else if (incoming instanceof String) {
+                    if (incoming.equals("exit")) {
+                        isNotFinished = false;
+                        objectInputStream.close();
+                        objectOutputStream.close();
+                        socket.close();
+                        serverSocket.close();
+                    }
                 }
-                break;
+
             }
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
+        } finally {
+            isNotFinished = false;
+            try {
+                if (objectOutputStream != null)
+                    objectInputStream.close();
+                if (objectOutputStream != null)
+                    objectOutputStream.close();
+                if (socket != null)
+                    socket.close();
+                if (serverSocket != null)
+                    serverSocket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 

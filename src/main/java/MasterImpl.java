@@ -6,13 +6,11 @@ import com.google.maps.model.LatLng;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.Mongo;
-import com.sun.org.apache.xpath.internal.operations.And;
 import org.mongojack.JacksonDBCollection;
 import org.mongojack.WriteResult;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.net.ServerSocket;
 import java.net.Socket;
 import java.text.DecimalFormat;
 import java.util.Arrays;
@@ -31,10 +29,10 @@ public class MasterImpl implements Master {
     private DirectionsResult resultOfMapReduce = null;
     private double truncatedStartLatitude = 38.06, truncatedStartLongitude = 23.80, truncatedEndLatitude = 38.04,
         truncatedEndLongitude = 23.80;
-    private Socket masterSocket;
-    private ObjectInputStream objectInputStreamFromAndroid;
-    private ObjectOutputStream objectOutputStreamToAndroid;
     private Socket socketToAthens, socketToJamaica, socketToHavana, socketToSaoPaolo, socketToMoscow;
+    private Socket socketToAndroid;
+    private ObjectInputStream objectInputStreamFromAndroidForTermination;
+    private ObjectOutputStream objectOutputStreamToAndroidForTermination;
 
     @Override
     public void initialize() {
@@ -43,19 +41,14 @@ public class MasterImpl implements Master {
         new Thread(new MapWorkerImpl(ApplicationConstants.HAVANA, ApplicationConstants.HAVANA_PORT)).start();
         new Thread(new MapWorkerImpl(ApplicationConstants.SAO_PAOLO, ApplicationConstants.SAO_PAOLO_PORT)).start();
         new Thread(new ReduceWorkerImpl(ApplicationConstants.MOSCOW, ApplicationConstants.MOSCOW_PORT)).start();
-        waitForAndroidQueries();
+        new Thread(new AndroidRunnable(this, ApplicationConstants.ANDROID, ApplicationConstants.ANDROID_PORT)).start();
+        openSocket(ApplicationConstants.ATHENS_PORT);
+        openSocket(ApplicationConstants.JAMAICA_PORT);
+        openSocket(ApplicationConstants.HAVANA_PORT);
+        openSocket(ApplicationConstants.SAO_PAOLO_PORT);
+        openSocket(ApplicationConstants.MOSCOW_PORT);
+        openSocket(ApplicationConstants.ANDROID_PORT);
         waitForNewQueriesThread();
-    }
-
-    private void waitForAndroidQueries() {
-        System.out.println("Master is waiting for android queries at port " + ApplicationConstants.MASTER_PORT + " ... ");
-        try {
-            final ServerSocket serverSocket = new ServerSocket(ApplicationConstants.MASTER_PORT);
-            Thread thread = new Thread(new AndroidListener(serverSocket));
-            thread.start();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     @Override
@@ -97,7 +90,22 @@ public class MasterImpl implements Master {
     }
 
     private void tearDownApplication() {
-        System.exit(1);
+        try {
+            objectOutputStreamToAthens.writeObject("exit");
+            objectOutputStreamToAthens.flush();
+            objectOutputStreamToJamaica.writeObject("exit");
+            objectOutputStreamToJamaica.flush();
+            objectOutputStreamToHavana.writeObject("exit");
+            objectOutputStreamToHavana.flush();
+            objectOutputStreamToSaoPaolo.writeObject("exit");
+            objectOutputStreamToSaoPaolo.flush();
+            objectOutputStreamToMoscow.writeObject("exit");
+            objectOutputStreamToMoscow.flush();
+            objectOutputStreamToAndroidForTermination.writeObject("exit");
+            objectOutputStreamToAndroidForTermination.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -123,7 +131,6 @@ public class MasterImpl implements Master {
         final MapTask mapTask = new MapTask(startGeoPoint, endGeoPoint);
         System.out.println("Sending " + mapTask + " to map worker " + ApplicationConstants.ATHENS + " ... ");
         try {
-            openSocket(ApplicationConstants.ATHENS_PORT);
             objectOutputStreamToAthens.writeObject(mapTask);
             objectOutputStreamToAthens.flush();
         } catch (IOException e) {
@@ -131,7 +138,6 @@ public class MasterImpl implements Master {
         }
         System.out.println("Sending " + mapTask + " to map worker " + ApplicationConstants.JAMAICA + " ... ");
         try {
-            openSocket(ApplicationConstants.JAMAICA_PORT);
             objectOutputStreamToJamaica.writeObject(mapTask);
             objectOutputStreamToJamaica.flush();
         } catch (IOException  e) {
@@ -139,7 +145,6 @@ public class MasterImpl implements Master {
         }
         System.out.println("Sending " + mapTask + " to map worker " + ApplicationConstants.HAVANA + " ... ");
         try {
-            openSocket(ApplicationConstants.HAVANA_PORT);
             objectOutputStreamToHavana.writeObject(mapTask);
             objectOutputStreamToHavana.flush();
         } catch (IOException e) {
@@ -147,7 +152,6 @@ public class MasterImpl implements Master {
         }
         System.out.println("Sending " + mapTask + " to map worker " + ApplicationConstants.SAO_PAOLO + " ... ");
         try {
-            openSocket(ApplicationConstants.SAO_PAOLO_PORT);
             objectOutputStreamToSaoPaolo.writeObject(mapTask);
             objectOutputStreamToSaoPaolo.flush();
         } catch (IOException e) {
@@ -184,6 +188,11 @@ public class MasterImpl implements Master {
                     objectOutputStreamToMoscow = new ObjectOutputStream(socketToMoscow.getOutputStream());
                     objectInputStreamFromMoscow = new ObjectInputStream(socketToMoscow.getInputStream());
                     break;
+                case ApplicationConstants.ANDROID_PORT:
+                    socketToAndroid = new Socket(ApplicationConstants.LOCALHOST, port);
+                    objectInputStreamFromAndroidForTermination = new ObjectInputStream(socketToAndroid.getInputStream());
+                    objectOutputStreamToAndroidForTermination = new ObjectOutputStream(socketToAndroid.getOutputStream());
+                    break;
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -194,13 +203,9 @@ public class MasterImpl implements Master {
     public void waitForMappers() {
         try {
             final String acknowledgementFromAthens = (String) objectInputStreamFromAthens.readObject();
-            socketToAthens.close();
             final String acknowledgementFromJamaica = (String) objectInputStreamFromJamaica.readObject();
-            socketToJamaica.close();
             final String acknowledgementFromHavana = (String) objectInputStreamFromHavana.readObject();
-            socketToHavana.close();
             final String acknowledgementFromSaoPaolo = (String) objectInputStreamFromSaoPaolo.readObject();
-            socketToSaoPaolo.close();
             if (acknowledgementFromAthens.equals("ack") &&
                 acknowledgementFromJamaica.equals("ack") &&
                 acknowledgementFromHavana.equals("ack") &&
@@ -218,7 +223,6 @@ public class MasterImpl implements Master {
     public void ackToReducers() {
         System.out.println("Sending ack to reduce worker " + ApplicationConstants.MOSCOW + " ... ");
         try {
-            openSocket(ApplicationConstants.MOSCOW_PORT);
             objectOutputStreamToMoscow.writeObject("ack");
             objectOutputStreamToMoscow.flush();
         } catch (IOException e) {
@@ -232,7 +236,6 @@ public class MasterImpl implements Master {
         Map<GeoPointPair, List<DirectionsResult>> result = null;
         try {
             result = (Map<GeoPointPair, List<DirectionsResult>>) objectInputStreamFromMoscow.readObject();
-            socketToMoscow.close();
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
@@ -321,39 +324,4 @@ public class MasterImpl implements Master {
         return true;
     }
 
-    private class AndroidListener implements Runnable {
-        private ServerSocket serverSocket;
-        AndroidListener(ServerSocket serverSocket) {
-            this.serverSocket = serverSocket;
-        }
-        @Override
-        public void run() {
-            try {
-                while (true) {
-                    masterSocket = serverSocket.accept();
-                    objectInputStreamFromAndroid = new ObjectInputStream(masterSocket.getInputStream());
-                    objectOutputStreamToAndroid = new ObjectOutputStream(masterSocket.getOutputStream());
-                    processQuery();
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        private void processQuery() {
-            Object incomingObject;
-            try {
-                incomingObject = objectInputStreamFromAndroid.readObject();
-                final String incoming = (String) incomingObject;
-                final String[] parts = incoming.split(" ");
-                final GeoPoint startGeoPoint = new GeoPoint(Double.parseDouble(parts[0]), Double.parseDouble(parts[1]));
-                final GeoPoint endGeoPoint = new GeoPoint(Double.parseDouble(parts[2]), Double.parseDouble(parts[3]));
-                final DirectionsResult result = searchCache(startGeoPoint, endGeoPoint);
-                objectOutputStreamToAndroid.writeObject(result);
-                objectOutputStreamToAndroid.flush();
-                masterSocket.close();
-            } catch (IOException | ClassNotFoundException e) {
-                e.printStackTrace();
-            }
-        }
-    }
 }

@@ -16,6 +16,8 @@ public final class ReduceWorkerImpl implements ReduceWorker {
     private ObjectOutputStream objectOutputStream;
     private Map<GeoPointPair, List<DirectionsResult>> mapToReturn = new HashMap<>();
     private Socket socket;
+    private boolean isNotFinished = true;
+    private ServerSocket serverSocket;
 
     ReduceWorkerImpl(String name, int port) {
         System.out.println("ReduceWorker " + name + " was created.");
@@ -54,10 +56,9 @@ public final class ReduceWorkerImpl implements ReduceWorker {
     @Override
     public void initialize() {
         System.out.println("ReducerWorker " + name + " is waiting for tasks at port " + port + " ... ");
-        ServerSocket serverSocket = null;
         try {
             serverSocket = new ServerSocket(port);
-            while (true) {
+            while (isNotFinished) {
                 socket = null;
                 try {
                     socket = serverSocket.accept();
@@ -65,11 +66,25 @@ public final class ReduceWorkerImpl implements ReduceWorker {
                     objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
                     waitForTasksThread();
                 } catch (IOException ex) {
-                    // this request only; ignore
+                    ex.printStackTrace();
                 }
             }
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            isNotFinished = false;
+            try {
+                if (objectOutputStream != null)
+                    objectInputStream.close();
+                if (objectOutputStream != null)
+                    objectOutputStream.close();
+                if (socket != null)
+                    socket.close();
+                if (serverSocket != null)
+                    serverSocket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -77,30 +92,50 @@ public final class ReduceWorkerImpl implements ReduceWorker {
     public void waitForTasksThread() {
         Object incomingObject;
         try {
-            while ((incomingObject = objectInputStream.readObject()) != null) {
+            while (isNotFinished) {
+                incomingObject = objectInputStream.readObject();
                 if (incomingObject instanceof String) {
                     final String inputLine = (String) incomingObject;
                     System.out.println(name + " received " + inputLine);
                     if (inputLine.equals("ack")) {
                         sendResults(mapToReturn);
+                    } else if (inputLine.equals("exit")) {
+                        isNotFinished = false;
+                        objectInputStream.close();
+                        objectOutputStream.close();
+                        socket.close();
+                        serverSocket.close();
                     }
-                    break;
                 } else if (incomingObject instanceof Map) {
                     final Map<GeoPointPair, List<DirectionsResult>> incoming
                             = (Map<GeoPointPair, List<DirectionsResult>>) incomingObject;
                     reduce(incoming);
                     System.out.println(name + " received " + incoming);
-                    break;
                 }
             }
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
+        } finally {
+            isNotFinished = false;
+            try {
+                if (objectOutputStream != null)
+                    objectInputStream.close();
+                if (objectOutputStream != null)
+                    objectOutputStream.close();
+                if (socket != null)
+                    socket.close();
+                if (serverSocket != null)
+                    serverSocket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
     @Override
     public void run() {
         initialize();
+        System.out.println("ReduceWorker " + name + " is exiting...");
     }
 
 }
