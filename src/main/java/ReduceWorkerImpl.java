@@ -15,7 +15,7 @@ public final class ReduceWorkerImpl implements ReduceWorker {
     private final int port;
     private Map<GeoPointPair, List<DirectionsResult>> mapToReturn = new HashMap<>();
     private Socket socket;
-    private boolean isNotFinished = true;
+    private boolean isNotFinished2 = true;
     private ServerSocket serverSocket;
 
     ReduceWorkerImpl(String name, int port) {
@@ -44,7 +44,7 @@ public final class ReduceWorkerImpl implements ReduceWorker {
         System.out.println("ReducerWorker " + name + " is waiting for tasks at port " + port + " ... ");
         try {
             serverSocket = new ServerSocket(port);
-            while (isNotFinished) {
+            while (isNotFinished2) {
                 socket = null;
                 try {
                     socket = serverSocket.accept();
@@ -56,10 +56,8 @@ public final class ReduceWorkerImpl implements ReduceWorker {
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
-            isNotFinished = false;
+            isNotFinished2 = false;
             try {
-                if (socket != null)
-                    socket.close();
                 if (serverSocket != null)
                     serverSocket.close();
             } catch (IOException e) {
@@ -85,6 +83,7 @@ public final class ReduceWorkerImpl implements ReduceWorker {
         private ServerSocket serverSocket;
         private ObjectInputStream objectInputStream;
         private ObjectOutputStream objectOutputStream;
+        private boolean isNotFinished = true;
 
         public A(Socket socket, ServerSocket serverSocket) {
             this.socket = socket;
@@ -116,6 +115,11 @@ public final class ReduceWorkerImpl implements ReduceWorker {
                             objectInputStream.close();
                             objectOutputStream.close();
                             socket.close();
+                        } else if (inputLine.equals("terminate")) {
+                            isNotFinished2 = false;
+                            objectInputStream.close();
+                            objectOutputStream.close();
+                            socket.close();
                             if (serverSocket != null)
                                 serverSocket.close();
                         }
@@ -137,8 +141,6 @@ public final class ReduceWorkerImpl implements ReduceWorker {
                         objectOutputStream.close();
                     if (socket != null)
                         socket.close();
-                    if (serverSocket != null)
-                        serverSocket.close();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }

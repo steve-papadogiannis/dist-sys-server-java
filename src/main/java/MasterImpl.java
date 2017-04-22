@@ -99,7 +99,7 @@ public class MasterImpl implements Master {
             objectOutputStreamToHavana.flush();
             objectOutputStreamToSaoPaolo.writeObject("exit");
             objectOutputStreamToSaoPaolo.flush();
-            objectOutputStreamToMoscow.writeObject("exit");
+            objectOutputStreamToMoscow.writeObject("terminate");
             objectOutputStreamToMoscow.flush();
 //            objectOutputStreamToAndroidForTermination.writeObject("exit");
 //            objectOutputStreamToAndroidForTermination.flush();

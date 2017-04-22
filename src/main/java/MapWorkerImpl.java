@@ -198,6 +198,8 @@ public class MapWorkerImpl implements MapWorker{
             objectOutputStreamToMoscow = new ObjectOutputStream(serverSocket.getOutputStream());
             objectOutputStreamToMoscow.writeObject(map);
             objectOutputStreamToMoscow.flush();
+            objectOutputStreamToMoscow.writeObject("exit");
+            objectOutputStreamToMoscow.flush();
         } catch (IOException e) {
             e.printStackTrace();
         }
