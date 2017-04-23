@@ -30,6 +30,7 @@ public class MapWorkerImpl implements MapWorker{
     private ObjectOutputStream objectOutputStreamToMoscow;
     private boolean isNotFinished = true;
     private ServerSocket serverSocket;
+    private Socket socketToMoscow;
 
     MapWorkerImpl(String name, int port) {
         System.out.println("MapWorker " + name + " was created.");
@@ -40,6 +41,18 @@ public class MapWorkerImpl implements MapWorker{
     @Override
     public void run() {
         initialize();
+        if (objectOutputStreamToMoscow != null)
+            try {
+                objectOutputStreamToMoscow.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        if (socketToMoscow != null)
+            try {
+                socketToMoscow.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         System.out.println("MapWorker " + name + " is exiting...");
     }
 
@@ -192,10 +205,9 @@ public class MapWorkerImpl implements MapWorker{
     @Override
     public void sendToReducers(List<Map<GeoPointPair, DirectionsResult>> map) {
         System.out.println(name + " is sending " + map + " to reduce worker " + ApplicationConstants.MOSCOW + " ... ");
-        Socket serverSocket = null;
         try {
-            serverSocket = new Socket(ApplicationConstants.LOCALHOST, ApplicationConstants.MOSCOW_PORT);
-            objectOutputStreamToMoscow = new ObjectOutputStream(serverSocket.getOutputStream());
+            socketToMoscow = new Socket(ApplicationConstants.LOCALHOST, ApplicationConstants.MOSCOW_PORT);
+            objectOutputStreamToMoscow = new ObjectOutputStream(socketToMoscow.getOutputStream());
             objectOutputStreamToMoscow.writeObject(map);
             objectOutputStreamToMoscow.flush();
             objectOutputStreamToMoscow.writeObject("exit");

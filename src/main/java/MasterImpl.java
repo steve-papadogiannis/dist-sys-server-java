@@ -103,6 +103,42 @@ public class MasterImpl implements Master {
             objectOutputStreamToMoscow.flush();
 //            objectOutputStreamToAndroidForTermination.writeObject("exit");
 //            objectOutputStreamToAndroidForTermination.flush();
+            if (objectOutputStreamToAthens != null)
+                objectOutputStreamToAthens.close();
+            if (objectInputStreamFromAthens != null)
+                objectInputStreamFromAthens.close();
+            if (socketToAthens != null)
+                socketToAthens.close();
+            if (objectOutputStreamToJamaica != null)
+                objectOutputStreamToJamaica.close();
+            if (objectInputStreamFromJamaica != null)
+                objectInputStreamFromJamaica.close();
+            if (socketToJamaica != null)
+                socketToJamaica.close();
+            if (objectOutputStreamToHavana != null)
+                objectOutputStreamToHavana.close();
+            if (objectInputStreamFromHavana != null)
+                objectInputStreamFromHavana.close();
+            if (socketToHavana != null)
+                socketToHavana.close();
+            if (objectOutputStreamToSaoPaolo != null)
+                objectOutputStreamToSaoPaolo.close();
+            if (objectInputStreamFromSaoPaolo != null)
+                objectInputStreamFromSaoPaolo.close();
+            if (socketToSaoPaolo != null)
+                socketToSaoPaolo.close();
+            if (objectOutputStreamToMoscow != null)
+                objectOutputStreamToMoscow.close();
+            if (objectInputStreamFromMoscow != null)
+                objectInputStreamFromMoscow.close();
+            if (socketToMoscow != null)
+                socketToMoscow.close();
+            if (objectOutputStreamToAndroidForTermination != null)
+                objectOutputStreamToAndroidForTermination.close();
+            if (objectInputStreamFromAndroidForTermination != null)
+                objectInputStreamFromAndroidForTermination.close();
+            if (socketToAndroid != null)
+                socketToAndroid.close();
         } catch (IOException e) {
             e.printStackTrace();
         }

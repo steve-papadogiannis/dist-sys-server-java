@@ -15,7 +15,6 @@ public final class ReduceWorkerImpl implements ReduceWorker {
     private final String name;
     private final int port;
     private Map<GeoPointPair, List<DirectionsResult>> mapToReturn = new HashMap<>();
-    private Socket socket;
     private boolean isNotFinished2 = true;
     private ServerSocket serverSocket;
 
@@ -40,8 +39,8 @@ public final class ReduceWorkerImpl implements ReduceWorker {
 
     }
 
-    public void setIsNotFinished(boolean isNotFinished) {
-        this.isNotFinished2 = isNotFinished;
+    private void falsifyIsNotFinishedFlag() {
+        this.isNotFinished2 = false;
     }
 
     @Override
@@ -51,7 +50,7 @@ public final class ReduceWorkerImpl implements ReduceWorker {
             serverSocket = new ServerSocket(port);
             ReduceWorkerImpl reduceWorker = this;
             while (isNotFinished2) {
-                socket = null;
+                Socket socket;
                 try {
                     socket = serverSocket.accept();
                     new Thread(new A(socket, serverSocket, reduceWorker)).start();
@@ -117,14 +116,14 @@ public final class ReduceWorkerImpl implements ReduceWorker {
                         final String inputLine = (String) incomingObject;
                         System.out.println(name + " received " + inputLine);
                         if (inputLine.equals("ack")) {
-                            sendResults(mapToReturn);
+                            sendResults();
                         } else if (inputLine.equals("exit")) {
                             isNotFinished = false;
                             objectInputStream.close();
                             objectOutputStream.close();
                             socket.close();
                         } else if (inputLine.equals("terminate")) {
-                            reduceWorker.setIsNotFinished(false);
+                            reduceWorker.falsifyIsNotFinishedFlag();
                             isNotFinished = false;
                             objectInputStream.close();
                             objectOutputStream.close();
@@ -156,17 +155,18 @@ public final class ReduceWorkerImpl implements ReduceWorker {
             }
         }
 
-        public void sendResults(Map<GeoPointPair, List<DirectionsResult>> map) {
+        void sendResults() {
             System.out.println("Sending result " + mapToReturn + " to master from " + ApplicationConstants.MOSCOW + " ... ");
             try {
                 objectOutputStream.writeObject(mapToReturn);
                 objectOutputStream.flush();
+                mapToReturn.clear();
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
 
-        public void reduce(List<Map<GeoPointPair, DirectionsResult>> incoming) {
+        void reduce(List<Map<GeoPointPair, DirectionsResult>> incoming) {
             incoming.forEach(x -> {
                 final GeoPointPair geoPointPair = x.keySet().stream().findFirst().orElse(null);
                 if (geoPointPair != null) {
