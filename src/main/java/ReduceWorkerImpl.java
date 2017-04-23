@@ -4,6 +4,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -39,24 +40,28 @@ public final class ReduceWorkerImpl implements ReduceWorker {
 
     }
 
+    public void setIsNotFinished(boolean isNotFinished) {
+        this.isNotFinished2 = isNotFinished;
+    }
+
     @Override
     public void initialize() {
         System.out.println("ReducerWorker " + name + " is waiting for tasks at port " + port + " ... ");
         try {
             serverSocket = new ServerSocket(port);
+            ReduceWorkerImpl reduceWorker = this;
             while (isNotFinished2) {
                 socket = null;
                 try {
                     socket = serverSocket.accept();
-                    new Thread(new A(socket, serverSocket)).start();
-                } catch (IOException ex) {
-                    ex.printStackTrace();
+                    new Thread(new A(socket, serverSocket, reduceWorker)).start();
+                } catch (SocketException ex) {
+                    System.out.println("Server socket on reduce worker was closed.");
                 }
             }
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
-            isNotFinished2 = false;
             try {
                 if (serverSocket != null)
                     serverSocket.close();
@@ -84,9 +89,12 @@ public final class ReduceWorkerImpl implements ReduceWorker {
         private ObjectInputStream objectInputStream;
         private ObjectOutputStream objectOutputStream;
         private boolean isNotFinished = true;
+        private ReduceWorkerImpl reduceWorker;
 
-        public A(Socket socket, ServerSocket serverSocket) {
+        A(Socket socket, ServerSocket serverSocket, ReduceWorkerImpl reduceWorker) {
+            this.serverSocket = serverSocket;
             this.socket = socket;
+            this.reduceWorker = reduceWorker;
         }
 
         @Override
@@ -100,7 +108,7 @@ public final class ReduceWorkerImpl implements ReduceWorker {
             }
         }
 
-        public void waitForTasksThread() {
+        void waitForTasksThread() {
             Object incomingObject;
             try {
                 while (isNotFinished) {
@@ -116,7 +124,8 @@ public final class ReduceWorkerImpl implements ReduceWorker {
                             objectOutputStream.close();
                             socket.close();
                         } else if (inputLine.equals("terminate")) {
-                            isNotFinished2 = false;
+                            reduceWorker.setIsNotFinished(false);
+                            isNotFinished = false;
                             objectInputStream.close();
                             objectOutputStream.close();
                             socket.close();
