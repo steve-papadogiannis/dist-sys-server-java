@@ -69,16 +69,12 @@ public class MasterImpl implements Master {
                 final double endLatitude = input.nextDouble();
                 System.out.print("Enter your end point longitude: ");
                 final double endLongitude = input.nextDouble();
-                truncatedStartLatitude = roundTo2Decimals(startLatitude);
-                truncatedStartLongitude = roundTo2Decimals(startLongitude);
-                truncatedEndLatitude = roundTo2Decimals(endLatitude);
-                truncatedEndLongitude = roundTo2Decimals(endLongitude);
                 System.out.println(String.format(
                         "You asked directions between : (%f, %f), (%f, %f)",
-                        truncatedStartLatitude, truncatedStartLongitude,
-                        truncatedEndLatitude, truncatedEndLongitude));
-                System.out.println(searchCache(new GeoPoint(truncatedStartLatitude, truncatedStartLongitude),
-                            new GeoPoint(truncatedEndLatitude, truncatedEndLongitude)));
+                        startLatitude, startLongitude,
+                        endLatitude, endLongitude));
+                System.out.println(searchCache(new GeoPoint(startLatitude, startLongitude),
+                            new GeoPoint(endLatitude, endLongitude)));
             }
         }
         tearDownApplication();
