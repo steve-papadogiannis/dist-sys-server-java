@@ -92,7 +92,7 @@ public class MapWorkerImpl implements MapWorker{
 
     @Override
     public void waitForTasksThread() {
-        Object incoming = null;
+        Object incoming;
         try {
             while (isNotFinished) {
                 incoming = objectInputStream.readObject();
