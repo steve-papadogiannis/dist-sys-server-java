@@ -1,4 +1,6 @@
 import com.google.maps.model.DirectionsResult;
+import jdk.nashorn.internal.runtime.regexp.joni.Regex;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -9,6 +11,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
 
 public final class ReduceWorkerImpl implements ReduceWorker {
 
@@ -17,6 +21,7 @@ public final class ReduceWorkerImpl implements ReduceWorker {
     private Map<GeoPointPair, List<DirectionsResult>> mapToReturn = new HashMap<>();
     private boolean isNotFinished2 = true;
     private ServerSocket serverSocket;
+    private CountDownLatch countDownLatch = new CountDownLatch(4);
 
     private ReduceWorkerImpl(String name, int port) {
         System.out.println("ReduceWorker " + name + " was created.");
@@ -121,9 +126,11 @@ public final class ReduceWorkerImpl implements ReduceWorker {
                         System.out.println(name + " received " + inputLine);
                         switch (inputLine) {
                             case "ack":
+                                countDownLatch.await();
                                 sendResults();
                                 break;
                             case "exit":
+                                countDownLatch.countDown();
                                 isNotFinished = false;
                                 objectInputStream.close();
                                 objectOutputStream.close();
@@ -146,7 +153,7 @@ public final class ReduceWorkerImpl implements ReduceWorker {
                         System.out.println(name + " received " + incoming);
                     }
                 }
-            } catch (IOException | ClassNotFoundException e) {
+            } catch (IOException | ClassNotFoundException | InterruptedException e) {
                 e.printStackTrace();
             } finally {
                 isNotFinished = false;
