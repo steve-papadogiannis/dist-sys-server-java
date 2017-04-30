@@ -24,6 +24,11 @@ public final class ReduceWorkerImpl implements ReduceWorker {
         this.port = port;
     }
 
+    public static void main(String[] args) {
+        ReduceWorkerImpl reduceWorker = new ReduceWorkerImpl(args[0], Integer.parseInt(args[1]));
+        reduceWorker.run();
+    }
+
     @Override
     public void waitForMasterAck() {
 
@@ -75,7 +80,6 @@ public final class ReduceWorkerImpl implements ReduceWorker {
 
     }
 
-    @Override
     public void run() {
         initialize();
         System.out.println("ReduceWorker " + name + " is exiting...");

@@ -1,4 +1,4 @@
-public interface Worker extends Runnable {
+public interface Worker {
 
     void initialize();
 

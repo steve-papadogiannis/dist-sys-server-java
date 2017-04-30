@@ -36,12 +36,6 @@ public class MasterImpl implements Master {
 
     @Override
     public void initialize() {
-        new Thread(new MapWorkerImpl(ApplicationConstants.ATHENS, ApplicationConstants.ATHENS_PORT)).start();
-        new Thread(new MapWorkerImpl(ApplicationConstants.JAMAICA, ApplicationConstants.JAMAICA_PORT)).start();
-        new Thread(new MapWorkerImpl(ApplicationConstants.HAVANA, ApplicationConstants.HAVANA_PORT)).start();
-        new Thread(new MapWorkerImpl(ApplicationConstants.SAO_PAOLO, ApplicationConstants.SAO_PAOLO_PORT)).start();
-        new Thread(new ReduceWorkerImpl(ApplicationConstants.MOSCOW, ApplicationConstants.MOSCOW_PORT)).start();
-//        new Thread(new AndroidRunnable(this, ApplicationConstants.ANDROID, ApplicationConstants.ANDROID_PORT)).start();
         openSocket(ApplicationConstants.ATHENS_PORT);
         openSocket(ApplicationConstants.JAMAICA_PORT);
         openSocket(ApplicationConstants.HAVANA_PORT);
@@ -78,11 +72,6 @@ public class MasterImpl implements Master {
             }
         }
         tearDownApplication();
-    }
-
-    private double roundTo2Decimals(double val) {
-        DecimalFormat decimalFormat = new DecimalFormat("###.##");
-        return Double.valueOf(decimalFormat.format(val));
     }
 
     private void tearDownApplication() {

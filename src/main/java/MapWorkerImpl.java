@@ -32,14 +32,18 @@ public class MapWorkerImpl implements MapWorker{
     private ServerSocket serverSocket;
     private Socket socketToMoscow;
 
-    MapWorkerImpl(String name, int port) {
+    private MapWorkerImpl(String name, int port) {
         System.out.println("MapWorker " + name + " was created.");
         this.name = name;
         this.port = port;
     }
 
-    @Override
-    public void run() {
+    public static void main(String[] args) {
+        MapWorkerImpl mapWorker = new MapWorkerImpl(args[0], Integer.parseInt(args[1]));
+        mapWorker.run();
+    }
+
+    private void run() {
         initialize();
         if (objectOutputStreamToMoscow != null)
             try {
