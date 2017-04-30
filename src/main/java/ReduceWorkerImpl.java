@@ -18,7 +18,7 @@ public final class ReduceWorkerImpl implements ReduceWorker {
     private boolean isNotFinished2 = true;
     private ServerSocket serverSocket;
 
-    ReduceWorkerImpl(String name, int port) {
+    private ReduceWorkerImpl(String name, int port) {
         System.out.println("ReduceWorker " + name + " was created.");
         this.name = name;
         this.port = port;
@@ -80,7 +80,7 @@ public final class ReduceWorkerImpl implements ReduceWorker {
 
     }
 
-    public void run() {
+    private void run() {
         initialize();
         System.out.println("ReduceWorker " + name + " is exiting...");
     }
@@ -119,21 +119,25 @@ public final class ReduceWorkerImpl implements ReduceWorker {
                     if (incomingObject instanceof String) {
                         final String inputLine = (String) incomingObject;
                         System.out.println(name + " received " + inputLine);
-                        if (inputLine.equals("ack")) {
-                            sendResults();
-                        } else if (inputLine.equals("exit")) {
-                            isNotFinished = false;
-                            objectInputStream.close();
-                            objectOutputStream.close();
-                            socket.close();
-                        } else if (inputLine.equals("terminate")) {
-                            reduceWorker.falsifyIsNotFinishedFlag();
-                            isNotFinished = false;
-                            objectInputStream.close();
-                            objectOutputStream.close();
-                            socket.close();
-                            if (serverSocket != null)
-                                serverSocket.close();
+                        switch (inputLine) {
+                            case "ack":
+                                sendResults();
+                                break;
+                            case "exit":
+                                isNotFinished = false;
+                                objectInputStream.close();
+                                objectOutputStream.close();
+                                socket.close();
+                                break;
+                            case "terminate":
+                                reduceWorker.falsifyIsNotFinishedFlag();
+                                isNotFinished = false;
+                                objectInputStream.close();
+                                objectOutputStream.close();
+                                socket.close();
+                                if (serverSocket != null)
+                                    serverSocket.close();
+                                break;
                         }
                     } else if (incomingObject instanceof List) {
                         final List<Map<GeoPointPair, DirectionsResult>> incoming
