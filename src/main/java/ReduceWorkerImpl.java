@@ -128,6 +128,7 @@ public final class ReduceWorkerImpl implements ReduceWorker {
                             case "ack":
                                 countDownLatch.await();
                                 sendResults();
+                                countDownLatch = new CountDownLatch(4);
                                 break;
                             case "exit":
                                 countDownLatch.countDown();
