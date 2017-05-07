@@ -41,8 +41,7 @@ public class MasterImpl implements Master {
         openSocket(ApplicationConstants.HAVANA_PORT);
         openSocket(ApplicationConstants.SAO_PAOLO_PORT);
         openSocket(ApplicationConstants.MOSCOW_PORT);
-//        openSocket(ApplicationConstants.ANDROID_PORT);
-        waitForNewQueriesThread();
+//        waitForNewQueriesThread();
     }
 
     @Override
@@ -86,8 +85,8 @@ public class MasterImpl implements Master {
             objectOutputStreamToSaoPaolo.flush();
             objectOutputStreamToMoscow.writeObject("terminate");
             objectOutputStreamToMoscow.flush();
-//            objectOutputStreamToAndroidForTermination.writeObject("exit");
-//            objectOutputStreamToAndroidForTermination.flush();
+            objectOutputStreamToAndroidForTermination.writeObject("exit");
+            objectOutputStreamToAndroidForTermination.flush();
             if (objectOutputStreamToAthens != null)
                 objectOutputStreamToAthens.close();
             if (objectInputStreamFromAthens != null)

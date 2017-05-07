@@ -7,7 +7,7 @@ import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-public final class AndroidRunnable implements Runnable {
+public final class AndroidClient {
 
     private final String name;
     private MasterImpl master;
@@ -18,16 +18,22 @@ public final class AndroidRunnable implements Runnable {
     private ObjectInputStream objectInputStreamFromAndroid;
     private ObjectOutputStream objectOutputStreamToAndroid;
 
-    AndroidRunnable(MasterImpl master, String name, int port) {
-        System.out.println("AndroidRunnable " + name + " was created.");
+    private AndroidClient(MasterImpl master, String name, int port) {
+        System.out.println("AndroidClient " + name + " was created.");
         this.master = master;
         this.name = name;
         this.port = port;
     }
 
-    @Override
-    public void run() {
-        System.out.println("AndroidRunnable " + name + " is waiting for tasks at port " + port + " ... ");
+    public static void main(String[] args) {
+        final MasterImpl master = new MasterImpl();
+        master.initialize();
+        final AndroidClient androidClient = new AndroidClient(master, args[0], Integer.parseInt(args[1]));
+        androidClient.run();
+    }
+
+    private void run() {
+        System.out.println("AndroidClient " + name + " is waiting for tasks at port " + port + " ... ");
         try {
             serverSocket = new ServerSocket(port);
             while (isNotFinished) {
