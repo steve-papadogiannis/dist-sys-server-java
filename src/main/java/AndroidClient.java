@@ -1,4 +1,3 @@
-
 import com.google.maps.model.DirectionsResult;
 
 import java.io.IOException;

@@ -73,7 +73,7 @@ public class MasterImpl implements Master {
         tearDownApplication();
     }
 
-    private void tearDownApplication() {
+    public void tearDownApplication() {
         try {
             objectOutputStreamToAthens.writeObject("exit");
             objectOutputStreamToAthens.flush();
@@ -85,8 +85,8 @@ public class MasterImpl implements Master {
             objectOutputStreamToSaoPaolo.flush();
             objectOutputStreamToMoscow.writeObject("terminate");
             objectOutputStreamToMoscow.flush();
-            objectOutputStreamToAndroidForTermination.writeObject("exit");
-            objectOutputStreamToAndroidForTermination.flush();
+//            objectOutputStreamToAndroidForTermination.writeObject("exit");
+//            objectOutputStreamToAndroidForTermination.flush();
             if (objectOutputStreamToAthens != null)
                 objectOutputStreamToAthens.close();
             if (objectInputStreamFromAthens != null)
@@ -117,12 +117,12 @@ public class MasterImpl implements Master {
                 objectInputStreamFromMoscow.close();
             if (socketToMoscow != null)
                 socketToMoscow.close();
-            if (objectOutputStreamToAndroidForTermination != null)
-                objectOutputStreamToAndroidForTermination.close();
-            if (objectInputStreamFromAndroidForTermination != null)
-                objectInputStreamFromAndroidForTermination.close();
-            if (socketToAndroid != null)
-                socketToAndroid.close();
+//            if (objectOutputStreamToAndroidForTermination != null)
+//                objectOutputStreamToAndroidForTermination.close();
+//            if (objectInputStreamFromAndroidForTermination != null)
+//                objectInputStreamFromAndroidForTermination.close();
+//            if (socketToAndroid != null)
+//                socketToAndroid.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -208,11 +208,11 @@ public class MasterImpl implements Master {
                     objectOutputStreamToMoscow = new ObjectOutputStream(socketToMoscow.getOutputStream());
                     objectInputStreamFromMoscow = new ObjectInputStream(socketToMoscow.getInputStream());
                     break;
-                case ApplicationConstants.ANDROID_PORT:
-                    socketToAndroid = new Socket(ApplicationConstants.LOCALHOST, port);
-                    objectInputStreamFromAndroidForTermination = new ObjectInputStream(socketToAndroid.getInputStream());
-                    objectOutputStreamToAndroidForTermination = new ObjectOutputStream(socketToAndroid.getOutputStream());
-                    break;
+//                case ApplicationConstants.ANDROID_PORT:
+//                    socketToAndroid = new Socket(ApplicationConstants.LOCALHOST, port);
+//                    objectInputStreamFromAndroidForTermination = new ObjectInputStream(socketToAndroid.getInputStream());
+//                    objectOutputStreamToAndroidForTermination = new ObjectOutputStream(socketToAndroid.getOutputStream());
+//                    break;
             }
         } catch (IOException e) {
             e.printStackTrace();
