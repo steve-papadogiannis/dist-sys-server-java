@@ -280,6 +280,7 @@ public class MasterImpl implements Master {
         Map<GeoPointPair, List<DirectionsResult>> result = null;
         try {
             result = (Map<GeoPointPair, List<DirectionsResult>>) objectInputStreamFromMoscow.readObject();
+            ReduceWorkerImpl.clearMapToReturn();
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }

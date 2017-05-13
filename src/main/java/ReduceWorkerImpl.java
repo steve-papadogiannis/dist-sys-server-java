@@ -18,7 +18,7 @@ public final class ReduceWorkerImpl implements ReduceWorker {
 
     private final String name;
     private final int port;
-    private Map<GeoPointPair, List<DirectionsResult>> mapToReturn = new HashMap<>();
+    private static Map<GeoPointPair, List<DirectionsResult>> mapToReturn = new HashMap<>();
     private boolean isNotFinished2 = true;
     private ServerSocket serverSocket;
     private CountDownLatch countDownLatch = new CountDownLatch(4);
@@ -83,6 +83,10 @@ public final class ReduceWorkerImpl implements ReduceWorker {
     @Override
     public void waitForTasksThread() {
 
+    }
+
+    static void clearMapToReturn() {
+        mapToReturn.clear();
     }
 
     private void run() {
@@ -176,7 +180,6 @@ public final class ReduceWorkerImpl implements ReduceWorker {
             try {
                 objectOutputStream.writeObject(mapToReturn);
                 objectOutputStream.flush();
-                mapToReturn.clear();
             } catch (IOException e) {
                 e.printStackTrace();
             }
