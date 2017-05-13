@@ -163,16 +163,25 @@ public class MapWorkerImpl implements MapWorker{
         final List<Map<GeoPointPair, DirectionsResult>> result = new ArrayList<>();
         resultsThatThisWorkerIsInChargeOf.forEach(x -> {
             final Map<GeoPointPair, DirectionsResult> map = new HashMap<>();
-            final GeoPointPair geoPointPair = new GeoPointPair(
-                    new GeoPoint(
-                            roundTo2Decimals(x.getStartPoint().getLatitude()),
-                            roundTo2Decimals(x.getStartPoint().getLongitude())),
-                    new GeoPoint(
-                            roundTo2Decimals(x.getEndPoint().getLatitude()),
-                            roundTo2Decimals(x.getEndPoint().getLongitude())
-                    ));
-            map.put(geoPointPair, x.getDirectionsResult());
-            result.add(map);
+            final boolean isStartLatitudeNearIssuedStartLatitude = Math.abs(obj1.getLatitude() - x.getStartPoint().getLatitude()) < 0.00001;
+            final boolean isStartLongitudeNearIssuedStartLongitude = Math.abs(obj1.getLongitude() - x.getStartPoint().getLongitude()) < 0.00001;
+            final boolean isEndLatitudeNearIssuedEndLatitude = Math.abs(obj2.getLatitude() - x.getEndPoint().getLatitude()) < 0.00001;
+            final boolean isEndLongitudeNearIssuedEndLongitude = Math.abs(obj2.getLongitude() - x.getEndPoint().getLongitude()) < 0.00001;
+            if (isStartLatitudeNearIssuedStartLatitude &&
+                isStartLongitudeNearIssuedStartLongitude &&
+                isEndLatitudeNearIssuedEndLatitude &&
+                isEndLongitudeNearIssuedEndLongitude) {
+                final GeoPointPair geoPointPair = new GeoPointPair(
+                        new GeoPoint(
+                                roundTo2Decimals(x.getStartPoint().getLatitude()),
+                                roundTo2Decimals(x.getStartPoint().getLongitude())),
+                        new GeoPoint(
+                                roundTo2Decimals(x.getEndPoint().getLatitude()),
+                                roundTo2Decimals(x.getEndPoint().getLongitude())
+                        ));
+                map.put(geoPointPair, x.getDirectionsResult());
+                result.add(map);
+            }
         });
         return result;
     }

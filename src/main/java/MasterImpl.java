@@ -27,12 +27,47 @@ public class MasterImpl implements Master {
     private ObjectInputStream objectInputStreamFromAthens, objectInputStreamFromJamaica, objectInputStreamFromHavana,
                               objectInputStreamFromSaoPaolo, objectInputStreamFromMoscow;
     private DirectionsResult resultOfMapReduce = null;
-    private double truncatedStartLatitude = 38.06, truncatedStartLongitude = 23.80, truncatedEndLatitude = 38.04,
-        truncatedEndLongitude = 23.80;
     private Socket socketToAthens, socketToJamaica, socketToHavana, socketToSaoPaolo, socketToMoscow;
     private Socket socketToAndroid;
     private ObjectInputStream objectInputStreamFromAndroidForTermination;
     private ObjectOutputStream objectOutputStreamToAndroidForTermination;
+
+    public double getStartLatitude() {
+        return startLatitude;
+    }
+
+    public void setStartLatitude(double startLatitude) {
+        this.startLatitude = startLatitude;
+    }
+
+    public double getStartLongitude() {
+        return startLongitude;
+    }
+
+    public void setStartLongitude(double startLongitude) {
+        this.startLongitude = startLongitude;
+    }
+
+    public double getEndLatitude() {
+        return endLatitude;
+    }
+
+    public void setEndLatitude(double endLatitude) {
+        this.endLatitude = endLatitude;
+    }
+
+    public double getEndLongitude() {
+        return endLongitude;
+    }
+
+    public void setEndLongitude(double endLongitude) {
+        this.endLongitude = endLongitude;
+    }
+
+    private double startLatitude;
+    private double startLongitude;
+    private double endLatitude;
+    private double endLongitude;
 
     @Override
     public void initialize() {
@@ -41,7 +76,6 @@ public class MasterImpl implements Master {
         openSocket(ApplicationConstants.HAVANA_PORT);
         openSocket(ApplicationConstants.SAO_PAOLO_PORT);
         openSocket(ApplicationConstants.MOSCOW_PORT);
-//        waitForNewQueriesThread();
     }
 
     @Override
@@ -55,13 +89,13 @@ public class MasterImpl implements Master {
             selection = input.nextInt();
             if (selection == 1) {
                 System.out.print("Enter your starting point latitude: ");
-                final double startLatitude = input.nextDouble();
+                startLatitude = input.nextDouble();
                 System.out.print("Enter your starting point longitude: ");
-                final double startLongitude = input.nextDouble();
+                startLongitude = input.nextDouble();
                 System.out.print("Enter your end point latitude: ");
-                final double endLatitude = input.nextDouble();
+                endLatitude = input.nextDouble();
                 System.out.print("Enter your end point longitude: ");
-                final double endLongitude = input.nextDouble();
+                endLongitude = input.nextDouble();
                 System.out.println(String.format(
                         "You asked directions between : (%f, %f), (%f, %f)",
                         startLatitude, startLongitude,
@@ -73,7 +107,7 @@ public class MasterImpl implements Master {
         tearDownApplication();
     }
 
-    public void tearDownApplication() {
+    void tearDownApplication() {
         try {
             objectOutputStreamToAthens.writeObject("exit");
             objectOutputStreamToAthens.flush();
@@ -85,8 +119,6 @@ public class MasterImpl implements Master {
             objectOutputStreamToSaoPaolo.flush();
             objectOutputStreamToMoscow.writeObject("terminate");
             objectOutputStreamToMoscow.flush();
-//            objectOutputStreamToAndroidForTermination.writeObject("exit");
-//            objectOutputStreamToAndroidForTermination.flush();
             if (objectOutputStreamToAthens != null)
                 objectOutputStreamToAthens.close();
             if (objectInputStreamFromAthens != null)
@@ -117,12 +149,6 @@ public class MasterImpl implements Master {
                 objectInputStreamFromMoscow.close();
             if (socketToMoscow != null)
                 socketToMoscow.close();
-//            if (objectOutputStreamToAndroidForTermination != null)
-//                objectOutputStreamToAndroidForTermination.close();
-//            if (objectInputStreamFromAndroidForTermination != null)
-//                objectInputStreamFromAndroidForTermination.close();
-//            if (socketToAndroid != null)
-//                socketToAndroid.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -134,14 +160,17 @@ public class MasterImpl implements Master {
         if (memCachedDirections == null) {
             distributeToMappers(startGeoPoint, endGeoPoint);
             if (resultOfMapReduce == null) {
+                System.out.println("Master: I invoke google api for directions!");
                 final DirectionsResult googleDirectionsAPI = askGoogleDirectionsAPI(startGeoPoint, endGeoPoint);
                 updateCache(startGeoPoint, endGeoPoint, googleDirectionsAPI);
                 updateDatabase(startGeoPoint, endGeoPoint, googleDirectionsAPI);
                 return googleDirectionsAPI;
             } else {
+                System.out.println("Master: A worker had the directions issued");
                 return resultOfMapReduce;
             }
         } else {
+            System.out.println("Master: Queried Directions were fetched from MemCache");
             return memCachedDirections;
         }
     }
@@ -208,11 +237,6 @@ public class MasterImpl implements Master {
                     objectOutputStreamToMoscow = new ObjectOutputStream(socketToMoscow.getOutputStream());
                     objectInputStreamFromMoscow = new ObjectInputStream(socketToMoscow.getInputStream());
                     break;
-//                case ApplicationConstants.ANDROID_PORT:
-//                    socketToAndroid = new Socket(ApplicationConstants.LOCALHOST, port);
-//                    objectInputStreamFromAndroidForTermination = new ObjectInputStream(socketToAndroid.getInputStream());
-//                    objectOutputStreamToAndroidForTermination = new ObjectOutputStream(socketToAndroid.getOutputStream());
-//                    break;
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -269,8 +293,8 @@ public class MasterImpl implements Master {
             return null;
         } else {
             Map.Entry<GeoPointPair, List<DirectionsResult>> min = null;
-            final GeoPoint startGeoPoint = new GeoPoint(truncatedStartLatitude, truncatedStartLongitude);
-            final GeoPoint endGeoPoint = new GeoPoint(truncatedEndLatitude, truncatedEndLongitude);
+            final GeoPoint startGeoPoint = new GeoPoint(startLatitude, startLongitude);
+            final GeoPoint endGeoPoint = new GeoPoint(endLatitude, endLongitude);
             for (Map.Entry<GeoPointPair, List<DirectionsResult>> entry : result.entrySet()) {
                 if (min == null ||
                     min.getKey().getStartGeoPoint().euclideanDistance(startGeoPoint) +

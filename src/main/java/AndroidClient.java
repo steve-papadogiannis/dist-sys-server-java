@@ -112,6 +112,10 @@ public final class AndroidClient {
                         final String[] parts = incoming.split(" ");
                         final GeoPoint startGeoPoint = new GeoPoint(Double.parseDouble(parts[0]), Double.parseDouble(parts[1]));
                         final GeoPoint endGeoPoint = new GeoPoint(Double.parseDouble(parts[2]), Double.parseDouble(parts[3]));
+                        master.setStartLatitude(startGeoPoint.getLatitude());
+                        master.setStartLongitude(startGeoPoint.getLongitude());
+                        master.setEndLatitude(endGeoPoint.getLatitude());
+                        master.setEndLongitude(endGeoPoint.getLongitude());
                         final DirectionsResult result = master.searchCache(startGeoPoint, endGeoPoint);
                         objectOutputStreamToAndroid.writeObject(result);
                         objectOutputStreamToAndroid.flush();
