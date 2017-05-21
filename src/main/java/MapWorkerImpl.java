@@ -22,8 +22,8 @@ import java.util.stream.Collectors;
 
 public class MapWorkerImpl implements MapWorker{
 
-    private final String name;
-    private final int port;
+    private final int port, reducerPort;
+    private final String reducerIp;
     private ObjectInputStream objectInputStream;
     private ObjectOutputStream objectOutputStream;
     private Socket socket;
@@ -32,14 +32,18 @@ public class MapWorkerImpl implements MapWorker{
     private ServerSocket serverSocket;
     private Socket socketToMoscow;
 
-    private MapWorkerImpl(String name, int port) {
-        System.out.println("MapWorker " + name + " was created.");
-        this.name = name;
+    private MapWorkerImpl(int port, String reducerIp, int reducerPort) {
+        System.out.println("MapWorker was created.");
         this.port = port;
+        this.reducerIp = reducerIp;
+        this.reducerPort = reducerPort;
     }
 
     public static void main(String[] args) {
-        MapWorkerImpl mapWorker = new MapWorkerImpl(args[0], Integer.parseInt(args[1]));
+        MapWorkerImpl mapWorker = new MapWorkerImpl(
+                Integer.parseInt(args[0]),
+                args[1],
+                Integer.parseInt(args[2]));
         mapWorker.run();
     }
 
@@ -57,12 +61,12 @@ public class MapWorkerImpl implements MapWorker{
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        System.out.println("MapWorker " + name + " is exiting...");
+        System.out.println("MapWorker " + port + " is exiting...");
     }
 
     @Override
     public void initialize() {
-        System.out.println("MapWorker " + name + " is waiting for tasks at port " + port + " ... ");
+        System.out.println("MapWorker is waiting for tasks at port " + port + " ... ");
         try {
             serverSocket = new ServerSocket(port);
             while (isNotFinished) {
@@ -100,7 +104,7 @@ public class MapWorkerImpl implements MapWorker{
         try {
             while (isNotFinished) {
                 incoming = objectInputStream.readObject();
-                System.out.println(name + " received " + incoming);
+                System.out.println(port + " received " + incoming);
                 if (incoming instanceof MapTask) {
                     final MapTask mapTask = (MapTask) incoming;
                     final List<Map<GeoPointPair, DirectionsResult>> map =
@@ -217,9 +221,10 @@ public class MapWorkerImpl implements MapWorker{
 
     @Override
     public void sendToReducers(List<Map<GeoPointPair, DirectionsResult>> map) {
-        System.out.println(name + " is sending " + map + " to reduce worker " + ApplicationConstants.MOSCOW + " ... ");
+        System.out.println(port + " is sending " + map
+                + " to reduce worker [" + reducerIp + " : " + reducerPort + " ] ... ");
         try {
-            socketToMoscow = new Socket(ApplicationConstants.LOCALHOST, ApplicationConstants.MOSCOW_PORT);
+            socketToMoscow = new Socket(reducerIp, reducerPort);
             objectOutputStreamToMoscow = new ObjectOutputStream(socketToMoscow.getOutputStream());
             objectOutputStreamToMoscow.writeObject(map);
             objectOutputStreamToMoscow.flush();

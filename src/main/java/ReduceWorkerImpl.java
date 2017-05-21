@@ -1,6 +1,4 @@
 import com.google.maps.model.DirectionsResult;
-import jdk.nashorn.internal.runtime.regexp.joni.Regex;
-
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -12,25 +10,22 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Future;
 
 public final class ReduceWorkerImpl implements ReduceWorker {
 
-    private final String name;
     private final int port;
     private static Map<GeoPointPair, List<DirectionsResult>> mapToReturn = new HashMap<>();
     private boolean isNotFinished2 = true;
     private ServerSocket serverSocket;
     private CountDownLatch countDownLatch = new CountDownLatch(4);
 
-    private ReduceWorkerImpl(String name, int port) {
-        System.out.println("ReduceWorker " + name + " was created.");
-        this.name = name;
+    private ReduceWorkerImpl(int port) {
+        System.out.println("ReduceWorker was created.");
         this.port = port;
     }
 
     public static void main(String[] args) {
-        ReduceWorkerImpl reduceWorker = new ReduceWorkerImpl(args[0], Integer.parseInt(args[1]));
+        ReduceWorkerImpl reduceWorker = new ReduceWorkerImpl(Integer.parseInt(args[0]));
         reduceWorker.run();
     }
 
@@ -55,7 +50,7 @@ public final class ReduceWorkerImpl implements ReduceWorker {
 
     @Override
     public void initialize() {
-        System.out.println("ReducerWorker " + name + " is waiting for tasks at port " + port + " ... ");
+        System.out.println("ReducerWorker is waiting for tasks at port " + port + " ... ");
         try {
             serverSocket = new ServerSocket(port);
             ReduceWorkerImpl reduceWorker = this;
@@ -91,7 +86,7 @@ public final class ReduceWorkerImpl implements ReduceWorker {
 
     private void run() {
         initialize();
-        System.out.println("ReduceWorker " + name + " is exiting...");
+        System.out.println("ReduceWorker " + port + " is exiting...");
     }
 
     private class A implements Runnable {
@@ -127,7 +122,7 @@ public final class ReduceWorkerImpl implements ReduceWorker {
                     incomingObject = objectInputStream.readObject();
                     if (incomingObject instanceof String) {
                         final String inputLine = (String) incomingObject;
-                        System.out.println(name + " received " + inputLine);
+                        System.out.println(port + " received " + inputLine);
                         switch (inputLine) {
                             case "ack":
                                 countDownLatch.await();
@@ -155,7 +150,7 @@ public final class ReduceWorkerImpl implements ReduceWorker {
                         final List<Map<GeoPointPair, DirectionsResult>> incoming
                                 = (List<Map<GeoPointPair, DirectionsResult>>) incomingObject;
                         reduce(incoming);
-                        System.out.println(name + " received " + incoming);
+                        System.out.println(port + " received " + incoming);
                     }
                 }
             } catch (IOException | ClassNotFoundException | InterruptedException e) {
@@ -176,7 +171,7 @@ public final class ReduceWorkerImpl implements ReduceWorker {
         }
 
         void sendResults() {
-            System.out.println("Sending result " + mapToReturn + " to master from " + ApplicationConstants.MOSCOW + " ... ");
+            System.out.println("Sending result " + mapToReturn + " to master from " + port + " ... ");
             try {
                 objectOutputStream.writeObject(mapToReturn);
                 objectOutputStream.flush();

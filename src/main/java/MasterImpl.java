@@ -12,31 +12,31 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
-import java.text.DecimalFormat;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Scanner;
+import java.util.*;
 
 public class MasterImpl implements Master {
 
     private final MemCache memCache = new MemCache();
     private final Scanner input = new Scanner(System.in);
-    private ObjectOutputStream objectOutputStreamToAthens, objectOutputStreamToJamaica, objectOutputStreamToHavana,
-                               objectOutputStreamToSaoPaolo, objectOutputStreamToMoscow;
-    private ObjectInputStream objectInputStreamFromAthens, objectInputStreamFromJamaica, objectInputStreamFromHavana,
-                              objectInputStreamFromSaoPaolo, objectInputStreamFromMoscow;
     private DirectionsResult resultOfMapReduce = null;
-    private Socket socketToAthens, socketToJamaica, socketToHavana, socketToSaoPaolo, socketToMoscow;
-    private Socket socketToAndroid;
-    private ObjectInputStream objectInputStreamFromAndroidForTermination;
-    private ObjectOutputStream objectOutputStreamToAndroidForTermination;
+    private List<Node> mapperNodes = new ArrayList<>();
+    private List<Node> reducerNodes = new ArrayList<>();
+
+    MasterImpl(String[] args) {
+        int i = 1;
+        for ( ; i < args.length - 2; i += 2) {
+            final Node node = new MapperNode(Integer.parseInt(args[i+1]), args[i]);
+            mapperNodes.add(node);
+        }
+        final Node node = new ReducerNode(Integer.parseInt(args[i+1]), args[i]);
+        reducerNodes.add(node);
+    }
 
     public double getStartLatitude() {
         return startLatitude;
     }
 
-    public void setStartLatitude(double startLatitude) {
+    void setStartLatitude(double startLatitude) {
         this.startLatitude = startLatitude;
     }
 
@@ -44,7 +44,7 @@ public class MasterImpl implements Master {
         return startLongitude;
     }
 
-    public void setStartLongitude(double startLongitude) {
+    void setStartLongitude(double startLongitude) {
         this.startLongitude = startLongitude;
     }
 
@@ -52,7 +52,7 @@ public class MasterImpl implements Master {
         return endLatitude;
     }
 
-    public void setEndLatitude(double endLatitude) {
+    void setEndLatitude(double endLatitude) {
         this.endLatitude = endLatitude;
     }
 
@@ -60,7 +60,7 @@ public class MasterImpl implements Master {
         return endLongitude;
     }
 
-    public void setEndLongitude(double endLongitude) {
+    void setEndLongitude(double endLongitude) {
         this.endLongitude = endLongitude;
     }
 
@@ -71,11 +71,10 @@ public class MasterImpl implements Master {
 
     @Override
     public void initialize() {
-        openSocket(ApplicationConstants.ATHENS_PORT);
-        openSocket(ApplicationConstants.JAMAICA_PORT);
-        openSocket(ApplicationConstants.HAVANA_PORT);
-        openSocket(ApplicationConstants.SAO_PAOLO_PORT);
-        openSocket(ApplicationConstants.MOSCOW_PORT);
+        for (Node node : mapperNodes)
+            node.openSocket();
+        for (Node node : reducerNodes)
+            node.openSocket();
     }
 
     @Override
@@ -108,49 +107,15 @@ public class MasterImpl implements Master {
     }
 
     void tearDownApplication() {
-        try {
-            objectOutputStreamToAthens.writeObject("exit");
-            objectOutputStreamToAthens.flush();
-            objectOutputStreamToJamaica.writeObject("exit");
-            objectOutputStreamToJamaica.flush();
-            objectOutputStreamToHavana.writeObject("exit");
-            objectOutputStreamToHavana.flush();
-            objectOutputStreamToSaoPaolo.writeObject("exit");
-            objectOutputStreamToSaoPaolo.flush();
-            objectOutputStreamToMoscow.writeObject("terminate");
-            objectOutputStreamToMoscow.flush();
-            if (objectOutputStreamToAthens != null)
-                objectOutputStreamToAthens.close();
-            if (objectInputStreamFromAthens != null)
-                objectInputStreamFromAthens.close();
-            if (socketToAthens != null)
-                socketToAthens.close();
-            if (objectOutputStreamToJamaica != null)
-                objectOutputStreamToJamaica.close();
-            if (objectInputStreamFromJamaica != null)
-                objectInputStreamFromJamaica.close();
-            if (socketToJamaica != null)
-                socketToJamaica.close();
-            if (objectOutputStreamToHavana != null)
-                objectOutputStreamToHavana.close();
-            if (objectInputStreamFromHavana != null)
-                objectInputStreamFromHavana.close();
-            if (socketToHavana != null)
-                socketToHavana.close();
-            if (objectOutputStreamToSaoPaolo != null)
-                objectOutputStreamToSaoPaolo.close();
-            if (objectInputStreamFromSaoPaolo != null)
-                objectInputStreamFromSaoPaolo.close();
-            if (socketToSaoPaolo != null)
-                socketToSaoPaolo.close();
-            if (objectOutputStreamToMoscow != null)
-                objectOutputStreamToMoscow.close();
-            if (objectInputStreamFromMoscow != null)
-                objectInputStreamFromMoscow.close();
-            if (socketToMoscow != null)
-                socketToMoscow.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+        for (Node node : mapperNodes) {
+            node.closeOutputStream();
+            node.closeInputStream();
+            node.closeSocket();
+        }
+        for (Node node : reducerNodes) {
+            node.closeOutputStream();
+            node.closeInputStream();
+            node.closeSocket();
         }
     }
 
@@ -178,99 +143,35 @@ public class MasterImpl implements Master {
     @Override
     public void distributeToMappers(GeoPoint startGeoPoint, GeoPoint endGeoPoint) {
         final MapTask mapTask = new MapTask(startGeoPoint, endGeoPoint);
-        System.out.println("Sending " + mapTask + " to map worker " + ApplicationConstants.ATHENS + " ... ");
-        try {
-            objectOutputStreamToAthens.writeObject(mapTask);
-            objectOutputStreamToAthens.flush();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        System.out.println("Sending " + mapTask + " to map worker " + ApplicationConstants.JAMAICA + " ... ");
-        try {
-            objectOutputStreamToJamaica.writeObject(mapTask);
-            objectOutputStreamToJamaica.flush();
-        } catch (IOException  e) {
-            e.printStackTrace();
-        }
-        System.out.println("Sending " + mapTask + " to map worker " + ApplicationConstants.HAVANA + " ... ");
-        try {
-            objectOutputStreamToHavana.writeObject(mapTask);
-            objectOutputStreamToHavana.flush();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        System.out.println("Sending " + mapTask + " to map worker " + ApplicationConstants.SAO_PAOLO + " ... ");
-        try {
-            objectOutputStreamToSaoPaolo.writeObject(mapTask);
-            objectOutputStreamToSaoPaolo.flush();
-        } catch (IOException e) {
-            e.printStackTrace();
+        for (Node node : mapperNodes) {
+            System.out.println("Sending " + mapTask + " to map worker " + node + " ... ");
+            node.sendMapTask(mapTask);
         }
         waitForMappers();
     }
 
-    private void openSocket(int port) {
-        try {
-            switch (port) {
-                case ApplicationConstants.ATHENS_PORT:
-                    socketToAthens = new Socket(ApplicationConstants.LOCALHOST, port);
-                    objectOutputStreamToAthens = new ObjectOutputStream(socketToAthens.getOutputStream());
-                    objectInputStreamFromAthens = new ObjectInputStream(socketToAthens.getInputStream());
-                    break;
-                case ApplicationConstants.JAMAICA_PORT:
-                    socketToJamaica = new Socket(ApplicationConstants.LOCALHOST, port);
-                    objectOutputStreamToJamaica = new ObjectOutputStream(socketToJamaica.getOutputStream());
-                    objectInputStreamFromJamaica = new ObjectInputStream(socketToJamaica.getInputStream());
-                    break;
-                case ApplicationConstants.HAVANA_PORT:
-                    socketToHavana = new Socket(ApplicationConstants.LOCALHOST, port);
-                    objectOutputStreamToHavana = new ObjectOutputStream(socketToHavana.getOutputStream());
-                    objectInputStreamFromHavana = new ObjectInputStream(socketToHavana.getInputStream());
-                    break;
-                case ApplicationConstants.SAO_PAOLO_PORT:
-                    socketToSaoPaolo = new Socket(ApplicationConstants.LOCALHOST, port);
-                    objectOutputStreamToSaoPaolo = new ObjectOutputStream(socketToSaoPaolo.getOutputStream());
-                    objectInputStreamFromSaoPaolo = new ObjectInputStream(socketToSaoPaolo.getInputStream());
-                    break;
-                case ApplicationConstants.MOSCOW_PORT:
-                    socketToMoscow = new Socket(ApplicationConstants.LOCALHOST, port);
-                    objectOutputStreamToMoscow = new ObjectOutputStream(socketToMoscow.getOutputStream());
-                    objectInputStreamFromMoscow = new ObjectInputStream(socketToMoscow.getInputStream());
-                    break;
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
     @Override
     public void waitForMappers() {
-        try {
-            final String acknowledgementFromAthens = (String) objectInputStreamFromAthens.readObject();
-            final String acknowledgementFromJamaica = (String) objectInputStreamFromJamaica.readObject();
-            final String acknowledgementFromHavana = (String) objectInputStreamFromHavana.readObject();
-            final String acknowledgementFromSaoPaolo = (String) objectInputStreamFromSaoPaolo.readObject();
-            if (acknowledgementFromAthens.equals("ack") &&
-                acknowledgementFromJamaica.equals("ack") &&
-                acknowledgementFromHavana.equals("ack") &&
-                acknowledgementFromSaoPaolo.equals("ack")) {
-                ackToReducers();
-            } else {
-                System.out.println("Something went wrong on acknowledgement");
+        final List<String> acknowledgements = new ArrayList<>();
+        for (Node node : mapperNodes) {
+            final String acknowledgement = node.getAcknowledgement();
+            if (acknowledgement != null) {
+                acknowledgements.add(acknowledgement);
             }
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
+        }
+        if (acknowledgements.size() == 4 &&
+                acknowledgements.stream().allMatch(x -> x.equals("ack"))) {
+            ackToReducers();
+        } else {
+            System.out.println("Something went wrong on acknowledgement");
         }
     }
 
     @Override
     public void ackToReducers() {
-        System.out.println("Sending ack to reduce worker " + ApplicationConstants.MOSCOW + " ... ");
-        try {
-            objectOutputStreamToMoscow.writeObject("ack");
-            objectOutputStreamToMoscow.flush();
-        } catch (IOException e) {
-            e.printStackTrace();
+        for (Node node : reducerNodes) {
+            System.out.println("Sending ack to reduce worker " + node + " ... ");
+            node.sendAck();
         }
         collectDataFromReducer();
     }
@@ -278,12 +179,10 @@ public class MasterImpl implements Master {
     @Override
     public void collectDataFromReducer() {
         Map<GeoPointPair, List<DirectionsResult>> result = null;
-        try {
-            result = (Map<GeoPointPair, List<DirectionsResult>>) objectInputStreamFromMoscow.readObject();
-            ReduceWorkerImpl.clearMapToReturn();
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
+        for ( Node node : reducerNodes) {
+            result = node.getResult();
         }
+        ReduceWorkerImpl.clearMapToReturn();
         if (result != null) {
             resultOfMapReduce = calculateEuclideanMin(result);
         }
@@ -367,6 +266,149 @@ public class MasterImpl implements Master {
         final WriteResult<DirectionsResultWrapper, String> resultWrappers = coll.insert(new DirectionsResultWrapper(startGeoPoint,
                 endGeoPoint, directions));
         return true;
+    }
+
+    private class Node {
+
+        @Override
+        public String toString() {
+            return "[ " + ip + " : " + port + " ]";
+        }
+
+        private final int port;
+
+        public Socket getSocket() {
+            return socket;
+        }
+
+        ObjectOutputStream getObjectOutputStream() {
+            return objectOutputStream;
+        }
+
+        public ObjectInputStream getObjectInputStream() {
+            return objectInputStream;
+        }
+
+        private Socket socket;
+        private ObjectOutputStream objectOutputStream;
+        private ObjectInputStream objectInputStream;
+
+        public String getIp() {
+            return ip;
+        }
+
+        private final String ip;
+
+        private Node(int port, String ip) {
+            this.port = port;
+            this.ip = ip;
+        }
+
+        public int getPort() {
+            return port;
+        }
+
+        void openSocket() {
+            try {
+                socket = new Socket(ip, port);
+                objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
+                objectInputStream = new ObjectInputStream(socket.getInputStream());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        void closeOutputStream() {
+            try {
+                objectOutputStream.writeObject("exit");
+                objectOutputStream.flush();
+                if (objectOutputStream != null)
+                    objectOutputStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        void closeInputStream() {
+            try {
+                if (objectInputStream != null)
+                    objectInputStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        void closeSocket() {
+            try {
+                if (socket != null)
+                    socket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        void sendMapTask(MapTask mapTask) {
+            try {
+                objectOutputStream.writeObject(mapTask);
+                objectOutputStream.flush();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        String getAcknowledgement() {
+            try {
+                return (String) objectInputStream.readObject();
+            } catch (IOException | ClassNotFoundException e) {
+                e.printStackTrace();
+                return null;
+            }
+        }
+
+        void sendAck() {
+            try {
+                objectOutputStream.writeObject("ack");
+                objectOutputStream.flush();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        Map<GeoPointPair,List<DirectionsResult>> getResult() {
+            try {
+                return (Map<GeoPointPair, List<DirectionsResult>>) objectInputStream.readObject();
+            } catch (IOException | ClassNotFoundException e) {
+                e.printStackTrace();
+                return null;
+            }
+        }
+    }
+
+    private class MapperNode extends Node {
+
+        private MapperNode(int port, String ip) {
+            super(port, ip);
+        }
+
+    }
+
+    private class ReducerNode extends Node {
+
+        private ReducerNode(int port, String ip) {
+            super(port, ip);
+        }
+
+        @Override
+        void closeOutputStream() {
+            try {
+                getObjectOutputStream().writeObject("terminate");
+                getObjectOutputStream().flush();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+
     }
 
 }
