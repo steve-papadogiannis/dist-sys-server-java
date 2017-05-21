@@ -10,11 +10,11 @@ final class GeoPointPair implements Serializable {
         this.endGeoPoint = endGeoPoint;
     }
 
-    public GeoPoint getStartGeoPoint() {
+    GeoPoint getStartGeoPoint() {
         return startGeoPoint;
     }
 
-    public GeoPoint getEndGeoPoint() {
+    GeoPoint getEndGeoPoint() {
         return endGeoPoint;
     }
 

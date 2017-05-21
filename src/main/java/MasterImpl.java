@@ -77,7 +77,6 @@ public class MasterImpl implements Master {
             node.openSocket();
     }
 
-    @Override
     public void waitForNewQueriesThread() {
         int selection = 0;
         while (selection != 2) {
@@ -251,13 +250,12 @@ public class MasterImpl implements Master {
     }
 
     @Override
-    public boolean updateCache(GeoPoint startGeoPoint, GeoPoint endGeoPoint, DirectionsResult directions) {
+    public void updateCache(GeoPoint startGeoPoint, GeoPoint endGeoPoint, DirectionsResult directions) {
         memCache.insertDirections(new GeoPointPair(startGeoPoint, endGeoPoint), directions);
-        return true;
     }
 
     @Override
-    public boolean updateDatabase(GeoPoint startGeoPoint, GeoPoint endGeoPoint, DirectionsResult directions) {
+    public void updateDatabase(GeoPoint startGeoPoint, GeoPoint endGeoPoint, DirectionsResult directions) {
         final Mongo mongo = new Mongo("127.0.0.1", 27017);
         final DB db = mongo.getDB("local");
         final DBCollection dbCollection = db.getCollection("directions");
@@ -265,7 +263,6 @@ public class MasterImpl implements Master {
                 DirectionsResultWrapper.class, String.class);
         final WriteResult<DirectionsResultWrapper, String> resultWrappers = coll.insert(new DirectionsResultWrapper(startGeoPoint,
                 endGeoPoint, directions));
-        return true;
     }
 
     private class Node {
