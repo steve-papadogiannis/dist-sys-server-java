@@ -1,13 +1,12 @@
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.maps.model.DirectionsResult;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.Mongo;
 import org.mongojack.DBCursor;
 import org.mongojack.JacksonDBCollection;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.UnsupportedEncodingException;
+
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.ByteBuffer;
@@ -143,15 +142,30 @@ public class MapWorkerImpl implements MapWorker{
 
     @Override
     public List<Map<GeoPointPair, DirectionsResult>> map(GeoPoint obj1, GeoPoint obj2) {
-        final Mongo mongo = new Mongo("127.0.0.1", 27017);
-        final DB db = mongo.getDB("local");
-        final DBCollection dbCollection = db.getCollection("directions");
-        final JacksonDBCollection<DirectionsResultWrapper, String> coll = JacksonDBCollection.wrap(dbCollection,
-            DirectionsResultWrapper.class, String.class);
-        final DBCursor<DirectionsResultWrapper> cursor = coll.find();
+//        final Mongo mongo = new Mongo("127.0.0.1", 27017);
+//        final DB db = mongo.getDB("local");
+//        final DBCollection dbCollection = db.getCollection("directions");
+//        final JacksonDBCollection<DirectionsResultWrapper, String> coll = JacksonDBCollection.wrap(dbCollection,
+//            DirectionsResultWrapper.class, String.class);
+//        final DBCursor<DirectionsResultWrapper> cursor = coll.find();
         final List<DirectionsResultWrapper> list = new ArrayList<>();
-        while (cursor.hasNext()) {
-           list.add(cursor.next());
+        final ObjectMapper mapper = new ObjectMapper();
+//        while (cursor.hasNext()) {
+//           list.add(cursor.next());
+//        }
+        String filename = port + "_directions";
+        File file = new File(filename);
+        if(file.exists() && !file.isDirectory()) {
+            try {
+                FileInputStream fis = new FileInputStream(filename);
+
+                while (fis.available() > 0) {
+                    list.add(mapper.readValue(fis, DirectionsResultWrapper.class));
+                }
+                fis.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
         final long ipPortHash = calculateHash("127.0.0.1" + socket.getLocalPort());
         final long ipPortHashMod4 = ipPortHash % 4 < 0 ? (- (ipPortHash % 4)) : ipPortHash % 4;
