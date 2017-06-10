@@ -148,7 +148,7 @@ public class MapWorkerImpl implements MapWorker{
         final JacksonDBCollection<DirectionsResultWrapper, String> coll = JacksonDBCollection.wrap(dbCollection,
             DirectionsResultWrapper.class, String.class);
         final DBCursor<DirectionsResultWrapper> cursor = coll.find();
-//        final List<DirectionsResultWrapper> list = new ArrayList<>();
+        final List<DirectionsResultWrapper> list = new ArrayList<>();
 //        final ObjectMapper mapper = new ObjectMapper();
         while (cursor.hasNext()) {
            list.add(cursor.next());
