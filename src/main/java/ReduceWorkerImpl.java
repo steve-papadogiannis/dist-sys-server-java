@@ -133,14 +133,14 @@ public final class ReduceWorkerImpl implements ReduceWorker {
                                 countDownLatch.countDown();
                                 isNotFinished = false;
                                 objectInputStream.close();
-                                objectOutputStream.close();
+//                                objectOutputStream.close();
                                 socket.close();
                                 break;
                             case "terminate":
                                 reduceWorker.falsifyIsNotFinishedFlag();
                                 isNotFinished = false;
                                 objectInputStream.close();
-                                objectOutputStream.close();
+//                                objectOutputStream.close();
                                 socket.close();
                                 if (serverSocket != null)
                                     serverSocket.close();
@@ -160,8 +160,8 @@ public final class ReduceWorkerImpl implements ReduceWorker {
                 try {
                     if (objectInputStream != null)
                         objectInputStream.close();
-                    if (objectOutputStream != null)
-                        objectOutputStream.close();
+//                    if (objectOutputStream != null)
+//                        objectOutputStream.close();
                     if (socket != null)
                         socket.close();
                 } catch (IOException e) {
