@@ -127,7 +127,7 @@ public class MasterImpl implements Master {
                 System.out.println("Master: I invoke google api for directions!");
                 final DirectionsResult googleDirectionsAPI = askGoogleDirectionsAPI(startGeoPoint, endGeoPoint);
                 updateCache(startGeoPoint, endGeoPoint, googleDirectionsAPI);
-                updateDatabase(startGeoPoint, endGeoPoint, googleDirectionsAPI);
+//                updateDatabase(startGeoPoint, endGeoPoint, googleDirectionsAPI);
                 return googleDirectionsAPI;
             } else {
                 System.out.println("Master: A worker had the directions issued");
