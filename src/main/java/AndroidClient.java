@@ -1,4 +1,4 @@
-import com.google.maps.model.DirectionsResult;
+import com.google.maps.model.*;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -6,6 +6,8 @@ import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.ArrayList;
+import java.util.List;
 
 public final class AndroidClient {
 
@@ -115,7 +117,8 @@ public final class AndroidClient {
                         master.setEndLatitude(endGeoPoint.getLatitude());
                         master.setEndLongitude(endGeoPoint.getLongitude());
                         final DirectionsResult result = master.searchCache(startGeoPoint, endGeoPoint);
-                        objectOutputStreamToAndroid.writeObject(result);
+                        final List<Double> directionPoints = getDirection(result);
+                        objectOutputStreamToAndroid.writeObject(directionPoints);
                         objectOutputStreamToAndroid.flush();
                     }
                 }
@@ -135,6 +138,55 @@ public final class AndroidClient {
                 }
             }
         }
+    }
+
+    private List<Double> getDirection(DirectionsResult directionsResult) {
+        final ArrayList<Double> listGeopoints = new ArrayList<>();
+        for (DirectionsRoute route : directionsResult.routes) {
+            for (DirectionsLeg leg : route.legs) {
+                listGeopoints.add(leg.startLocation.lat);
+                listGeopoints.add(leg.startLocation.lng);
+                for (DirectionsStep step : leg.steps) {
+                    final List<LatLng> arr = decodePoly(step.polyline.getEncodedPath());
+                    for (LatLng anArr : arr) {
+                        listGeopoints.add(anArr.lat);
+                        listGeopoints.add(anArr.lng);
+                    }
+                }
+                listGeopoints.add(leg.endLocation.lat);
+                listGeopoints.add(leg.endLocation.lng);
+            }
+        }
+        return listGeopoints;
+    }
+
+    private List<LatLng> decodePoly(String polyline) {
+        final ArrayList<LatLng> poly = new ArrayList<>();
+        int index = 0, len = polyline.length();
+        int lat = 0, lng = 0;
+        while (index < len) {
+            int b, shift = 0, result = 0;
+            do {
+                b = polyline.charAt(index++) - 63;
+                result |= (b & 0x1f) << shift;
+                shift += 5;
+            } while (b >= 0x20);
+            int dlat = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+            lat += dlat;
+            shift = 0;
+            result = 0;
+            do {
+                b = polyline.charAt(index++) - 63;
+                result |= (b & 0x1f) << shift;
+                shift += 5;
+            } while (b >= 0x20);
+            int dlng = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+            lng += dlng;
+
+            LatLng position = new LatLng((double) lat / 1E5, (double) lng / 1E5);
+            poly.add(position);
+        }
+        return poly;
     }
 
 }
