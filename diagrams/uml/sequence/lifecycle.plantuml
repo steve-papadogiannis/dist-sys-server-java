@@ -1,5 +1,5 @@
 @startuml
-participant client
+participant "Client Application" as Client
 actor User
 boundary Server
 control ServerRunnable
@@ -9,6 +9,7 @@ control ReduceNode
 control MapWorker
 control ReduceWorker
 control ReduceWorkerRunnable
+collections MemCache
 database Mongo
 boundary "Google Geolocation API" as GGA
 autonumber "<b>[000]"
@@ -31,6 +32,9 @@ activate Server
 Server -> Master : Initializes
 activate Master
 
+Master -> MemCache : Initializes
+activate MemCache
+
 Master -> MapNode : Initializes
 activate MapNode
 
@@ -50,4 +54,23 @@ Server -> Server : Opens Server Socket
 
 == Runtime ==
 
+Client -> Server : Connects
+
+Server -> ServerRunnable : Accepts Connection
+activate ServerRunnable
+
+alt Search Directions
+
+Client -> ServerRunnable : Query for Directions
+
+ServerRunnable -> Master : Query for Directions
+
+Master -> MemCache : Query for Directions
+
+alt Hit
+
+MemCache -> Master :
+
+end
+end
 @enduml
