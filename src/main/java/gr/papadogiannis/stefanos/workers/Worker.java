@@ -1,4 +1,4 @@
-package gr.papadogiannis.stefanos;
+package gr.papadogiannis.stefanos.workers;
 
 /**
  * @author Stefanos Papadogiannis

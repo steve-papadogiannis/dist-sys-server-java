@@ -1,6 +1,8 @@
-package gr.papadogiannis.stefanos;
+package gr.papadogiannis.stefanos.clients;
 
 import com.google.maps.model.*;
+import gr.papadogiannis.stefanos.masters.impl.MasterImpl;
+import gr.papadogiannis.stefanos.models.GeoPoint;
 
 import java.io.ObjectOutputStream;
 import java.io.ObjectInputStream;

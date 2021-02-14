@@ -1,6 +1,7 @@
-package gr.papadogiannis.stefanos;
+package gr.papadogiannis.stefanos.masters;
 
 import com.google.maps.model.DirectionsResult;
+import gr.papadogiannis.stefanos.models.GeoPoint;
 
 /**
  * @author Stefanos Papadogiannis

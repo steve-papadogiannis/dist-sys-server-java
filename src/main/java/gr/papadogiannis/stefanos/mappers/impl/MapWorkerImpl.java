@@ -1,6 +1,11 @@
-package gr.papadogiannis.stefanos;
+package gr.papadogiannis.stefanos.mappers.impl;
 
 import com.google.maps.model.DirectionsResult;
+import gr.papadogiannis.stefanos.mappers.MapWorker;
+import gr.papadogiannis.stefanos.models.DirectionsResultWrapper;
+import gr.papadogiannis.stefanos.models.GeoPoint;
+import gr.papadogiannis.stefanos.models.GeoPointPair;
+import gr.papadogiannis.stefanos.models.MapTask;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import java.security.NoSuchAlgorithmException;
@@ -150,9 +155,9 @@ public class MapWorkerImpl implements MapWorker {
 //        final Mongo mongo = new Mongo("127.0.0.1", 27017);
 //        final DB db = mongo.getDB("local");
 //        final DBCollection dbCollection = db.getCollection("directions");
-//        final JacksonDBCollection<gr.papadogiannis.stefanos.DirectionsResultWrapper, String> coll = JacksonDBCollection.wrap(dbCollection,
-//            gr.papadogiannis.stefanos.DirectionsResultWrapper.class, String.class);
-//        final DBCursor<gr.papadogiannis.stefanos.DirectionsResultWrapper> cursor = coll.find();
+//        final JacksonDBCollection<gr.papadogiannis.stefanos.models.DirectionsResultWrapper, String> coll = JacksonDBCollection.wrap(dbCollection,
+//            gr.papadogiannis.stefanos.models.DirectionsResultWrapper.class, String.class);
+//        final DBCursor<gr.papadogiannis.stefanos.models.DirectionsResultWrapper> cursor = coll.find();
         final List<DirectionsResultWrapper> list = new ArrayList<>();
         final ObjectMapper mapper = new ObjectMapper();
 //        while (cursor.hasNext()) {

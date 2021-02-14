@@ -1,6 +1,8 @@
-package gr.papadogiannis.stefanos;
+package gr.papadogiannis.stefanos.reducers.impl;
 
 import com.google.maps.model.DirectionsResult;
+import gr.papadogiannis.stefanos.models.GeoPointPair;
+import gr.papadogiannis.stefanos.reducers.ReduceWorker;
 
 import java.util.concurrent.CountDownLatch;
 import java.io.ObjectOutputStream;
@@ -91,7 +93,7 @@ public final class ReduceWorkerImpl implements ReduceWorker {
 
     }
 
-    static void clearMapToReturn() {
+    public static void clearMapToReturn() {
         mapToReturn.clear();
     }
 

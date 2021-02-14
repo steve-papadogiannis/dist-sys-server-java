@@ -1,7 +1,8 @@
-package gr.papadogiannis.stefanos;
+package gr.papadogiannis.stefanos.models;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.maps.model.DirectionsResult;
+import gr.papadogiannis.stefanos.models.GeoPoint;
 import org.mongojack.ObjectId;
 
 /**
@@ -9,7 +10,7 @@ import org.mongojack.ObjectId;
  *
  * Created on 15/4/2017
  */
-final class DirectionsResultWrapper {
+public final class DirectionsResultWrapper {
 
     private String id;
 
@@ -21,7 +22,7 @@ final class DirectionsResultWrapper {
 
     DirectionsResultWrapper() { }
 
-    DirectionsResultWrapper(GeoPoint startPoint, GeoPoint endPoint, DirectionsResult directionsResult) {
+    public DirectionsResultWrapper(GeoPoint startPoint, GeoPoint endPoint, DirectionsResult directionsResult) {
         this.startPoint = startPoint;
         this.endPoint = endPoint;
         this.directionsResult = directionsResult;
@@ -55,17 +56,17 @@ final class DirectionsResultWrapper {
     }
 
     @JsonProperty("startPoint")
-    GeoPoint getStartPoint() {
+    public GeoPoint getStartPoint() {
         return startPoint;
     }
 
     @JsonProperty("endPoint")
-    GeoPoint getEndPoint() {
+    public GeoPoint getEndPoint() {
         return endPoint;
     }
 
     @JsonProperty("directionsResult")
-    DirectionsResult getDirectionsResult() {
+    public DirectionsResult getDirectionsResult() {
         return directionsResult;
     }
 

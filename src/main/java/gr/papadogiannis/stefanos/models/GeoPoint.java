@@ -1,4 +1,4 @@
-package gr.papadogiannis.stefanos;
+package gr.papadogiannis.stefanos.models;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -13,7 +13,7 @@ public final class GeoPoint implements Serializable {
 
     private double latitude, longitude;
 
-    GeoPoint(double latitude, double longitude) {
+    public GeoPoint(double latitude, double longitude) {
         this.latitude = latitude;
         this.longitude = longitude;
     }
@@ -22,12 +22,12 @@ public final class GeoPoint implements Serializable {
     }
 
     @JsonProperty("latitude")
-    double getLatitude() {
+    public double getLatitude() {
         return latitude;
     }
 
     @JsonProperty("longitude")
-    double getLongitude() {
+    public double getLongitude() {
         return longitude;
     }
 
@@ -41,7 +41,7 @@ public final class GeoPoint implements Serializable {
         this.longitude = longitude;
     }
 
-    double euclideanDistance(GeoPoint other) {
+    public double euclideanDistance(GeoPoint other) {
         return Math.sqrt((Math.pow((latitude - other.latitude), 2) + Math.pow((longitude - other.longitude), 2)));
     }
 

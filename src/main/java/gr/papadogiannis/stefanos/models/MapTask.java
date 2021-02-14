@@ -1,4 +1,6 @@
-package gr.papadogiannis.stefanos;
+package gr.papadogiannis.stefanos.models;
+
+import gr.papadogiannis.stefanos.models.GeoPoint;
 
 import java.io.Serializable;
 
@@ -11,16 +13,16 @@ public final class MapTask implements Serializable {
 
     private final GeoPoint startGeoPoint, endGeoPoint;
 
-    MapTask(GeoPoint startGeoPoint, GeoPoint endGeoPoint) {
+    public MapTask(GeoPoint startGeoPoint, GeoPoint endGeoPoint) {
         this.startGeoPoint = startGeoPoint;
         this.endGeoPoint = endGeoPoint;
     }
 
-    GeoPoint getStartGeoPoint() {
+    public GeoPoint getStartGeoPoint() {
         return startGeoPoint;
     }
 
-    GeoPoint getEndGeoPoint() {
+    public GeoPoint getEndGeoPoint() {
         return endGeoPoint;
     }
 

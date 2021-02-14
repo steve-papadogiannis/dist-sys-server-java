@@ -1,6 +1,13 @@
-package gr.papadogiannis.stefanos;
+package gr.papadogiannis.stefanos.masters.impl;
 
 import gr.papadogiannis.stefanos.constants.ApplicationConstants;
+import gr.papadogiannis.stefanos.models.DirectionsResultWrapper;
+import gr.papadogiannis.stefanos.reducers.impl.ReduceWorkerImpl;
+import gr.papadogiannis.stefanos.models.GeoPointPair;
+import gr.papadogiannis.stefanos.caches.MemCache;
+import gr.papadogiannis.stefanos.models.GeoPoint;
+import gr.papadogiannis.stefanos.masters.Master;
+import gr.papadogiannis.stefanos.models.MapTask;
 import com.google.maps.model.DirectionsResult;
 import com.google.maps.errors.ApiException;
 import org.mongojack.JacksonDBCollection;
@@ -10,13 +17,13 @@ import com.google.maps.model.LatLng;
 import java.io.ObjectOutputStream;
 import org.mongojack.WriteResult;
 import java.io.ObjectInputStream;
+import java.util.logging.Logger;
 import com.mongodb.DBCollection;
 import java.io.IOException;
 import com.mongodb.Mongo;
 import java.net.Socket;
 import com.mongodb.DB;
 import java.util.*;
-import java.util.logging.Logger;
 
 /**
  * @author Stefanos Papadogiannis
@@ -33,7 +40,7 @@ public class MasterImpl implements Master {
     private DirectionsResult resultOfMapReduce = null;
     private final MemCache memCache = new MemCache();
 
-    MasterImpl(String[] args) {
+    public MasterImpl(String[] args) {
         int i = 1;
         for ( ; i < args.length - 2; i += 2) {
             final Node node = new MapperNode(Integer.parseInt(args[i+1]), args[i]);
@@ -47,7 +54,7 @@ public class MasterImpl implements Master {
         return startLatitude;
     }
 
-    void setStartLatitude(double startLatitude) {
+    public void setStartLatitude(double startLatitude) {
         this.startLatitude = startLatitude;
     }
 
@@ -55,7 +62,7 @@ public class MasterImpl implements Master {
         return startLongitude;
     }
 
-    void setStartLongitude(double startLongitude) {
+    public void setStartLongitude(double startLongitude) {
         this.startLongitude = startLongitude;
     }
 
@@ -63,7 +70,7 @@ public class MasterImpl implements Master {
         return endLatitude;
     }
 
-    void setEndLatitude(double endLatitude) {
+    public void setEndLatitude(double endLatitude) {
         this.endLatitude = endLatitude;
     }
 
@@ -71,7 +78,7 @@ public class MasterImpl implements Master {
         return endLongitude;
     }
 
-    void setEndLongitude(double endLongitude) {
+    public void setEndLongitude(double endLongitude) {
         this.endLongitude = endLongitude;
     }
 
@@ -116,7 +123,7 @@ public class MasterImpl implements Master {
         tearDownApplication();
     }
 
-    void tearDownApplication() {
+    public void tearDownApplication() {
         for (Node node : mapperNodes) {
             node.closeOutputStream();
             node.closeInputStream();

@@ -1,6 +1,8 @@
-package gr.papadogiannis.stefanos;
+package gr.papadogiannis.stefanos.reducers;
 
 import com.google.maps.model.DirectionsResult;
+import gr.papadogiannis.stefanos.workers.Worker;
+import gr.papadogiannis.stefanos.models.GeoPointPair;
 
 import java.util.List;
 import java.util.Map;

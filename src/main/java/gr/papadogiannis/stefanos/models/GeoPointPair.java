@@ -1,4 +1,4 @@
-package gr.papadogiannis.stefanos;
+package gr.papadogiannis.stefanos.models;
 
 import java.io.Serializable;
 
@@ -7,21 +7,21 @@ import java.io.Serializable;
  * <p>
  * Created on 15/4/2017
  */
-final class GeoPointPair implements Serializable {
+public final class GeoPointPair implements Serializable {
 
     private final GeoPoint startGeoPoint;
     private final GeoPoint endGeoPoint;
 
-    GeoPointPair(GeoPoint startGeoPoint, GeoPoint endGeoPoint) {
+    public GeoPointPair(GeoPoint startGeoPoint, GeoPoint endGeoPoint) {
         this.startGeoPoint = startGeoPoint;
         this.endGeoPoint = endGeoPoint;
     }
 
-    GeoPoint getStartGeoPoint() {
+    public GeoPoint getStartGeoPoint() {
         return startGeoPoint;
     }
 
-    GeoPoint getEndGeoPoint() {
+    public GeoPoint getEndGeoPoint() {
         return endGeoPoint;
     }
 

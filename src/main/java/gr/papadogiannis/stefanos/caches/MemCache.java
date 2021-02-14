@@ -1,6 +1,7 @@
-package gr.papadogiannis.stefanos;
+package gr.papadogiannis.stefanos.caches;
 
 import com.google.maps.model.DirectionsResult;
+import gr.papadogiannis.stefanos.models.GeoPointPair;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -10,7 +11,7 @@ import java.util.Map;
  * <p>
  * Created on 15/4/2017
  */
-final class MemCache {
+public final class MemCache {
 
     private final static int MAX_SIZE = 100;
 
@@ -21,11 +22,11 @@ final class MemCache {
         }
     };
 
-    void insertDirections(GeoPointPair geoPointsPair, DirectionsResult directions) {
+    public void insertDirections(GeoPointPair geoPointsPair, DirectionsResult directions) {
         map.put(geoPointsPair, directions);
     }
 
-    DirectionsResult getDirections(GeoPointPair geoPointsPair) {
+    public DirectionsResult getDirections(GeoPointPair geoPointsPair) {
         return map.get(geoPointsPair);
     }
 
