@@ -1,3 +1,5 @@
+package gr.papadogiannis.stefanos;
+
 import java.io.Serializable;
 
 public final class MapTask implements Serializable{
@@ -19,7 +21,7 @@ public final class MapTask implements Serializable{
 
     @Override
     public String toString() {
-        return "MapTask [ " + startGeopoint + ", " + endGeoPoint + " ]";
+        return "gr.papadogiannis.stefanos.MapTask [ " + startGeopoint + ", " + endGeoPoint + " ]";
     }
 
 }

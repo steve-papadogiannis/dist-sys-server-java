@@ -1,10 +1,7 @@
+package gr.papadogiannis.stefanos;
+
 import com.google.maps.model.DirectionsResult;
-import com.mongodb.DB;
-import com.mongodb.DBCollection;
-import com.mongodb.Mongo;
 import org.codehaus.jackson.map.ObjectMapper;
-import org.mongojack.DBCursor;
-import org.mongojack.JacksonDBCollection;
 
 import java.io.*;
 import java.net.ServerSocket;
@@ -32,7 +29,7 @@ public class MapWorkerImpl implements MapWorker{
     private Socket socketToMoscow;
 
     private MapWorkerImpl(int port, String reducerIp, int reducerPort) {
-        System.out.println("MapWorker was created.");
+        System.out.println("gr.papadogiannis.stefanos.MapWorker was created.");
         this.port = port;
         this.reducerIp = reducerIp;
         this.reducerPort = reducerPort;
@@ -60,12 +57,12 @@ public class MapWorkerImpl implements MapWorker{
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        System.out.println("MapWorker " + port + " is exiting...");
+        System.out.println("gr.papadogiannis.stefanos.MapWorker " + port + " is exiting...");
     }
 
     @Override
     public void initialize() {
-        System.out.println("MapWorker is waiting for tasks at port " + port + " ... ");
+        System.out.println("gr.papadogiannis.stefanos.MapWorker is waiting for tasks at port " + port + " ... ");
         try {
             serverSocket = new ServerSocket(port);
             while (isNotFinished) {
@@ -145,9 +142,9 @@ public class MapWorkerImpl implements MapWorker{
 //        final Mongo mongo = new Mongo("127.0.0.1", 27017);
 //        final DB db = mongo.getDB("local");
 //        final DBCollection dbCollection = db.getCollection("directions");
-//        final JacksonDBCollection<DirectionsResultWrapper, String> coll = JacksonDBCollection.wrap(dbCollection,
-//            DirectionsResultWrapper.class, String.class);
-//        final DBCursor<DirectionsResultWrapper> cursor = coll.find();
+//        final JacksonDBCollection<gr.papadogiannis.stefanos.DirectionsResultWrapper, String> coll = JacksonDBCollection.wrap(dbCollection,
+//            gr.papadogiannis.stefanos.DirectionsResultWrapper.class, String.class);
+//        final DBCursor<gr.papadogiannis.stefanos.DirectionsResultWrapper> cursor = coll.find();
         final List<DirectionsResultWrapper> list = new ArrayList<>();
         final ObjectMapper mapper = new ObjectMapper();
 //        while (cursor.hasNext()) {

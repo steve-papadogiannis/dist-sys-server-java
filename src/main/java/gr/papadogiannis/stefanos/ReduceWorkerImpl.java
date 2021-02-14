@@ -1,3 +1,5 @@
+package gr.papadogiannis.stefanos;
+
 import com.google.maps.model.DirectionsResult;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -20,7 +22,7 @@ public final class ReduceWorkerImpl implements ReduceWorker {
     private CountDownLatch countDownLatch = new CountDownLatch(4);
 
     private ReduceWorkerImpl(int port) {
-        System.out.println("ReduceWorker was created.");
+        System.out.println("gr.papadogiannis.stefanos.ReduceWorker was created.");
         this.port = port;
     }
 
@@ -86,7 +88,7 @@ public final class ReduceWorkerImpl implements ReduceWorker {
 
     private void run() {
         initialize();
-        System.out.println("ReduceWorker " + port + " is exiting...");
+        System.out.println("gr.papadogiannis.stefanos.ReduceWorker " + port + " is exiting...");
     }
 
     private class A implements Runnable {

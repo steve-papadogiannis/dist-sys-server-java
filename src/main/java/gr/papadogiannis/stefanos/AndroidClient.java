@@ -1,3 +1,5 @@
+package gr.papadogiannis.stefanos;
+
 import com.google.maps.model.*;
 
 import java.io.IOException;
@@ -17,7 +19,7 @@ public final class AndroidClient {
     private boolean isNotFinished2 = true;
 
     private AndroidClient(MasterImpl master, int port) {
-        System.out.println("AndroidClient was created.");
+        System.out.println("gr.papadogiannis.stefanos.AndroidClient was created.");
         this.master = master;
         this.port = port;
     }
@@ -34,7 +36,7 @@ public final class AndroidClient {
     }
 
     private void run() {
-        System.out.println("AndroidClient is waiting for tasks at port " + port + " ... ");
+        System.out.println("gr.papadogiannis.stefanos.AndroidClient is waiting for tasks at port " + port + " ... ");
         try {
             serverSocket = new ServerSocket(port);
             final AndroidClient androidClient = this;

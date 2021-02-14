@@ -1,3 +1,5 @@
+package gr.papadogiannis.stefanos;
+
 import com.google.maps.model.DirectionsResult;
 
 public interface Master {

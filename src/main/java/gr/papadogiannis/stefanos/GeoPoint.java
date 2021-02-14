@@ -1,3 +1,5 @@
+package gr.papadogiannis.stefanos;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.io.Serializable;
@@ -39,7 +41,7 @@ public final class GeoPoint implements Serializable {
 
     @Override
     public String toString() {
-        return "GeoPoint [ Latitude = " + latitude + ", Longitude = " + longitude + "]";
+        return "gr.papadogiannis.stefanos.GeoPoint [ Latitude = " + latitude + ", Longitude = " + longitude + "]";
     }
 
     @Override

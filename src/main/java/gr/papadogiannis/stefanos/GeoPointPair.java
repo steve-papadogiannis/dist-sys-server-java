@@ -1,3 +1,5 @@
+package gr.papadogiannis.stefanos;
+
 import java.io.Serializable;
 
 final class GeoPointPair implements Serializable {

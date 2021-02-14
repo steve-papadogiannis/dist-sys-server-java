@@ -1,3 +1,5 @@
+package gr.papadogiannis.stefanos;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.maps.model.DirectionsResult;
 import org.mongojack.ObjectId;

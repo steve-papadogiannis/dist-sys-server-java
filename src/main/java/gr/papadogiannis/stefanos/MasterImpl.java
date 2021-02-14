@@ -1,3 +1,5 @@
+package gr.papadogiannis.stefanos;
+
 import com.google.maps.DirectionsApi;
 import com.google.maps.GeoApiContext;
 import com.google.maps.errors.ApiException;
@@ -124,17 +126,17 @@ public class MasterImpl implements Master {
         if (memCachedDirections == null) {
             distributeToMappers(startGeoPoint, endGeoPoint);
             if (resultOfMapReduce == null) {
-                System.out.println("Master: I invoke google api for directions!");
+                System.out.println("gr.papadogiannis.stefanos.Master: I invoke google api for directions!");
                 final DirectionsResult googleDirectionsAPI = askGoogleDirectionsAPI(startGeoPoint, endGeoPoint);
                 updateCache(startGeoPoint, endGeoPoint, googleDirectionsAPI);
 //                updateDatabase(startGeoPoint, endGeoPoint, googleDirectionsAPI);
                 return googleDirectionsAPI;
             } else {
-                System.out.println("Master: A worker had the directions issued");
+                System.out.println("gr.papadogiannis.stefanos.Master: A worker had the directions issued");
                 return resultOfMapReduce;
             }
         } else {
-            System.out.println("Master: Queried Directions were fetched from MemCache");
+            System.out.println("gr.papadogiannis.stefanos.Master: Queried Directions were fetched from gr.papadogiannis.stefanos.MemCache");
             return memCachedDirections;
         }
     }
