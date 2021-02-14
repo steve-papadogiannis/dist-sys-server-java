@@ -69,8 +69,69 @@ Master -> MemCache : Query for Directions
 
 alt Hit
 
-MemCache -> Master :
+MemCache -> Master : Returns Result
+
+else Miss
+
+Master -> MapWorker : Distribute Query to MapWorker
+
+Master -> Master : Waits for MapWorkers
+
+MapWorker -> MapWorker : Processes Request
+
+MapWorker -> ReduceWorkerRunnable : Reduce Result
+activate ReduceWorkerRunnable
+
+ReduceWorkerRunnable -> ReduceWorkerRunnable : Reduces Result
+
+MapWorker -> ReduceWorkerRunnable : Sends Exit Signal
+deactivate ReduceWorkerRunnable
+
+MapWorker -> Master : Sends Acknowledgement
+
+Master -> ReduceWorkerRunnable : Sends Acknowledgement
+
+alt Hit
+
+ReduceWorkerRunnable -> Master : Returns Reduced Result
+
+Master -> Master : Calculates Euclidean Minimum
+
+else Miss
+
+Master -> GGA : Queries For Directions
+
+GGA --> Master : Returns Result
+
+Master -> MemCache : Saves Result
+
+Master -> Mongo : Saves Result
 
 end
+
 end
+
+Master -> ServerRunnable : Sends Result
+
+ServerRunnable -> Client : Sends Result
+
+else Exit Signal
+
+Client -> ServerRunnable : Sends Exit Signal
+deactivate ServerRunnable
+
+== Shutdown ==
+
+else Terminate Signal
+
+Client -> ServerRunnable : Sends Terminate Signal
+deactivate ServerRunnable
+
+deactivate Master
+
+deactivate Server
+
+end
+
+
 @enduml
