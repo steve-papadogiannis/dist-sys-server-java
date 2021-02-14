@@ -1,28 +1,37 @@
 package gr.papadogiannis.stefanos;
 
+import gr.papadogiannis.stefanos.constants.ApplicationConstants;
+import com.google.maps.model.DirectionsResult;
+import com.google.maps.errors.ApiException;
+import org.mongojack.JacksonDBCollection;
 import com.google.maps.DirectionsApi;
 import com.google.maps.GeoApiContext;
-import com.google.maps.errors.ApiException;
-import com.google.maps.model.DirectionsResult;
 import com.google.maps.model.LatLng;
-import com.mongodb.DB;
-import com.mongodb.DBCollection;
-import com.mongodb.Mongo;
-import org.mongojack.JacksonDBCollection;
-import org.mongojack.WriteResult;
-import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import org.mongojack.WriteResult;
+import java.io.ObjectInputStream;
+import com.mongodb.DBCollection;
+import java.io.IOException;
+import com.mongodb.Mongo;
 import java.net.Socket;
+import com.mongodb.DB;
 import java.util.*;
+import java.util.logging.Logger;
 
+/**
+ * @author Stefanos Papadogiannis
+ *
+ * Created on 15/4/2017
+ */
 public class MasterImpl implements Master {
 
-    private final MemCache memCache = new MemCache();
+    private static final Logger LOGGER = Logger.getLogger(MasterImpl.class.getName());
+
+    private final List<Node> reducerNodes = new ArrayList<>();
+    private final List<Node> mapperNodes = new ArrayList<>();
     private final Scanner input = new Scanner(System.in);
     private DirectionsResult resultOfMapReduce = null;
-    private List<Node> mapperNodes = new ArrayList<>();
-    private List<Node> reducerNodes = new ArrayList<>();
+    private final MemCache memCache = new MemCache();
 
     MasterImpl(String[] args) {
         int i = 1;
@@ -82,26 +91,26 @@ public class MasterImpl implements Master {
     public void waitForNewQueriesThread() {
         int selection = 0;
         while (selection != 2) {
-            System.out.println("Choose from these choices");
-            System.out.println("-------------------------");
-            System.out.println("1 - Enter geo points");
-            System.out.println("2 - Quit");
+            LOGGER.info("Choose from these choices");
+            LOGGER.info("-------------------------");
+            LOGGER.info("1 - Enter geo points");
+            LOGGER.info("2 - Quit");
             selection = input.nextInt();
             if (selection == 1) {
-                System.out.print("Enter your starting point latitude: ");
+                LOGGER.info("Enter your starting point latitude: ");
                 startLatitude = input.nextDouble();
-                System.out.print("Enter your starting point longitude: ");
+                LOGGER.info("Enter your starting point longitude: ");
                 startLongitude = input.nextDouble();
-                System.out.print("Enter your end point latitude: ");
+                LOGGER.info("Enter your end point latitude: ");
                 endLatitude = input.nextDouble();
-                System.out.print("Enter your end point longitude: ");
+                LOGGER.info("Enter your end point longitude: ");
                 endLongitude = input.nextDouble();
-                System.out.println(String.format(
+                LOGGER.info(String.format(
                         "You asked directions between : (%f, %f), (%f, %f)",
                         startLatitude, startLongitude,
                         endLatitude, endLongitude));
-                System.out.println(searchCache(new GeoPoint(startLatitude, startLongitude),
-                            new GeoPoint(endLatitude, endLongitude)));
+                LOGGER.info(searchCache(new GeoPoint(startLatitude, startLongitude),
+                            new GeoPoint(endLatitude, endLongitude)).toString());
             }
         }
         tearDownApplication();
@@ -126,17 +135,17 @@ public class MasterImpl implements Master {
         if (memCachedDirections == null) {
             distributeToMappers(startGeoPoint, endGeoPoint);
             if (resultOfMapReduce == null) {
-                System.out.println("gr.papadogiannis.stefanos.Master: I invoke google api for directions!");
+                LOGGER.info("Master: I invoke google api for directions!");
                 final DirectionsResult googleDirectionsAPI = askGoogleDirectionsAPI(startGeoPoint, endGeoPoint);
                 updateCache(startGeoPoint, endGeoPoint, googleDirectionsAPI);
 //                updateDatabase(startGeoPoint, endGeoPoint, googleDirectionsAPI);
                 return googleDirectionsAPI;
             } else {
-                System.out.println("gr.papadogiannis.stefanos.Master: A worker had the directions issued");
+                LOGGER.info("Master: A worker had the directions issued");
                 return resultOfMapReduce;
             }
         } else {
-            System.out.println("gr.papadogiannis.stefanos.Master: Queried Directions were fetched from gr.papadogiannis.stefanos.MemCache");
+            LOGGER.info("Master: Queried Directions were fetched from MemCache");
             return memCachedDirections;
         }
     }
@@ -145,7 +154,7 @@ public class MasterImpl implements Master {
     public void distributeToMappers(GeoPoint startGeoPoint, GeoPoint endGeoPoint) {
         final MapTask mapTask = new MapTask(startGeoPoint, endGeoPoint);
         for (Node node : mapperNodes) {
-            System.out.println("Sending " + mapTask + " to map worker " + node + " ... ");
+            LOGGER.info(String.format("Sending %s to map worker %s... %n", mapTask, node));
             node.sendMapTask(mapTask);
         }
         waitForMappers();
@@ -164,14 +173,14 @@ public class MasterImpl implements Master {
                 acknowledgements.stream().allMatch(x -> x.equals("ack"))) {
             ackToReducers();
         } else {
-            System.out.println("Something went wrong on acknowledgement");
+            LOGGER.info("Something went wrong on acknowledgement");
         }
     }
 
     @Override
     public void ackToReducers() {
         for (Node node : reducerNodes) {
-            System.out.println("Sending ack to reduce worker " + node + " ... ");
+            LOGGER.info(String.format("Sending ack to reduce worker %s... %n", node));
             node.sendAck();
         }
         collectDataFromReducer();
@@ -267,11 +276,11 @@ public class MasterImpl implements Master {
                 endGeoPoint, directions));
     }
 
-    private class Node {
+    private static class Node {
 
         @Override
         public String toString() {
-            return "[ " + ip + " : " + port + " ]";
+            return String.format("[ %s : %d ]", ip, port);
         }
 
         private final int port;

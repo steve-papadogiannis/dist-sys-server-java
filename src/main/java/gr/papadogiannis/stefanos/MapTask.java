@@ -2,17 +2,22 @@ package gr.papadogiannis.stefanos;
 
 import java.io.Serializable;
 
-public final class MapTask implements Serializable{
+/**
+ * @author Stefanos Papadogiannis
+ * <p>
+ * Created on 15/4/2017
+ */
+public final class MapTask implements Serializable {
 
-    private final GeoPoint startGeopoint, endGeoPoint;
+    private final GeoPoint startGeoPoint, endGeoPoint;
 
-    MapTask(GeoPoint startGeopoint, GeoPoint endGeoPoint) {
-        this.startGeopoint = startGeopoint;
+    MapTask(GeoPoint startGeoPoint, GeoPoint endGeoPoint) {
+        this.startGeoPoint = startGeoPoint;
         this.endGeoPoint = endGeoPoint;
     }
 
-    GeoPoint getStartGeopoint() {
-        return startGeopoint;
+    GeoPoint getStartGeoPoint() {
+        return startGeoPoint;
     }
 
     GeoPoint getEndGeoPoint() {
@@ -21,7 +26,7 @@ public final class MapTask implements Serializable{
 
     @Override
     public String toString() {
-        return "gr.papadogiannis.stefanos.MapTask [ " + startGeopoint + ", " + endGeoPoint + " ]";
+        return String.format("MapTask [ %s, %s ]", startGeoPoint, endGeoPoint);
     }
 
 }

@@ -4,6 +4,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.maps.model.DirectionsResult;
 import org.mongojack.ObjectId;
 
+/**
+ * @author Stefanos Papadogiannis
+ *
+ * Created on 15/4/2017
+ */
 final class DirectionsResultWrapper {
 
     private String id;
@@ -37,6 +42,7 @@ final class DirectionsResultWrapper {
     public String getId() {
         return id;
     }
+
     @ObjectId
     @JsonProperty("_id")
     public void setId(String id) {

@@ -5,7 +5,12 @@ import com.google.maps.model.DirectionsResult;
 import java.util.List;
 import java.util.Map;
 
-public interface ReduceWorker extends Worker{
+/**
+ * @author Stefanos Papadogiannis
+ * <p>
+ * Created on 15/4/2017
+ */
+public interface ReduceWorker extends Worker {
 
     void waitForMasterAck();
 

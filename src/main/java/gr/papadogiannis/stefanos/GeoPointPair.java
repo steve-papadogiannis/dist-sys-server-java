@@ -2,6 +2,11 @@ package gr.papadogiannis.stefanos;
 
 import java.io.Serializable;
 
+/**
+ * @author Stefanos Papadogiannis
+ * <p>
+ * Created on 15/4/2017
+ */
 final class GeoPointPair implements Serializable {
 
     private final GeoPoint startGeoPoint;
@@ -47,13 +52,13 @@ final class GeoPointPair implements Serializable {
         final GeoPointPair other = (GeoPointPair) obj;
 
         return Double.doubleToLongBits(startGeoPoint.getLatitude()) ==
-                    Double.doubleToLongBits(other.startGeoPoint.getLatitude()) &&
-               Double.doubleToLongBits(startGeoPoint.getLongitude()) ==
-                    Double.doubleToLongBits(other.startGeoPoint.getLongitude()) &&
-               Double.doubleToLongBits(endGeoPoint.getLatitude()) ==
-                    Double.doubleToLongBits(other.endGeoPoint.getLatitude()) &&
-               Double.doubleToLongBits(endGeoPoint.getLongitude()) ==
-                    Double.doubleToLongBits(other.endGeoPoint.getLongitude());
+                Double.doubleToLongBits(other.startGeoPoint.getLatitude()) &&
+                Double.doubleToLongBits(startGeoPoint.getLongitude()) ==
+                        Double.doubleToLongBits(other.startGeoPoint.getLongitude()) &&
+                Double.doubleToLongBits(endGeoPoint.getLatitude()) ==
+                        Double.doubleToLongBits(other.endGeoPoint.getLatitude()) &&
+                Double.doubleToLongBits(endGeoPoint.getLongitude()) ==
+                        Double.doubleToLongBits(other.endGeoPoint.getLongitude());
     }
 
 }

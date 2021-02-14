@@ -2,24 +2,32 @@ package gr.papadogiannis.stefanos;
 
 import com.google.maps.model.*;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.io.ObjectInputStream;
+import java.util.logging.Logger;
 import java.net.SocketException;
+import java.net.ServerSocket;
 import java.util.ArrayList;
+import java.io.IOException;
+import java.net.Socket;
 import java.util.List;
 
+/**
+ * @author Stefanos Papadogiannis
+ *
+ * Created on 22/4/2017
+ */
 public final class AndroidClient {
 
-    private MasterImpl master;
-    private final int port;
+    private static final Logger LOGGER = Logger.getLogger(AndroidClient.class.getName());
+
+    private boolean isNotFinished = true;
     private ServerSocket serverSocket;
-    private boolean isNotFinished2 = true;
+    private final MasterImpl master;
+    private final int port;
 
     private AndroidClient(MasterImpl master, int port) {
-        System.out.println("gr.papadogiannis.stefanos.AndroidClient was created.");
+        LOGGER.info("AndroidClient was created.");
         this.master = master;
         this.port = port;
     }
@@ -32,21 +40,21 @@ public final class AndroidClient {
     }
 
     private void falsifyIsNotFinishedFlag() {
-        this.isNotFinished2 = false;
+        this.isNotFinished = false;
     }
 
     private void run() {
-        System.out.println("gr.papadogiannis.stefanos.AndroidClient is waiting for tasks at port " + port + " ... ");
+        LOGGER.info(String.format("AndroidClient is waiting for tasks at port %d... ", port));
         try {
             serverSocket = new ServerSocket(port);
             final AndroidClient androidClient = this;
-            while (isNotFinished2) {
+            while (isNotFinished) {
                 Socket socket;
                 try {
                     socket = serverSocket.accept();
                     new Thread(new A(socket, serverSocket, androidClient)).start();
                 } catch (SocketException ex) {
-                    System.out.println("Server socket on android client was closed.");
+                    LOGGER.info("Server socket on android client was closed.");
                 }
             }
         } catch (IOException e) {
@@ -59,22 +67,22 @@ public final class AndroidClient {
                 e.printStackTrace();
             }
         }
-        System.out.println("Android Listener is exiting...");
+        LOGGER.info("AndroidClient is exiting...");
     }
 
-    private class A implements Runnable {
+    private static class A implements Runnable {
 
-        private Socket socket;
-        private ServerSocket serverSocket;
         private ObjectInputStream objectInputStreamFromAndroid;
         private ObjectOutputStream objectOutputStreamToAndroid;
+        private final AndroidClient androidClient;
+        private final ServerSocket serverSocket;
         private boolean isNotFinished = true;
-        private AndroidClient androidClient;
+        private final Socket socket;
 
         A(Socket socket, ServerSocket serverSocket, AndroidClient androidClient) {
+            this.androidClient = androidClient;
             this.serverSocket = serverSocket;
             this.socket = socket;
-            this.androidClient = androidClient;
         }
 
         @Override
@@ -107,19 +115,19 @@ public final class AndroidClient {
                         socket.close();
                         if (serverSocket != null)
                             serverSocket.close();
-                        master.tearDownApplication();
+                        androidClient.getMaster().tearDownApplication();
                         break;
                     } else {
                         final String incoming = (String) incomingObject;
                         final String[] parts = incoming.split(" ");
                         final GeoPoint startGeoPoint = new GeoPoint(Double.parseDouble(parts[0]), Double.parseDouble(parts[1]));
                         final GeoPoint endGeoPoint = new GeoPoint(Double.parseDouble(parts[2]), Double.parseDouble(parts[3]));
-                        master.setStartLatitude(startGeoPoint.getLatitude());
-                        master.setStartLongitude(startGeoPoint.getLongitude());
-                        master.setEndLatitude(endGeoPoint.getLatitude());
-                        master.setEndLongitude(endGeoPoint.getLongitude());
-                        final DirectionsResult result = master.searchCache(startGeoPoint, endGeoPoint);
-                        final List<Double> directionPoints = getDirection(result);
+                        androidClient.getMaster().setStartLatitude(startGeoPoint.getLatitude());
+                        androidClient.getMaster().setStartLongitude(startGeoPoint.getLongitude());
+                        androidClient.getMaster().setEndLatitude(endGeoPoint.getLatitude());
+                        androidClient.getMaster().setEndLongitude(endGeoPoint.getLongitude());
+                        final DirectionsResult result = androidClient.getMaster().searchCache(startGeoPoint, endGeoPoint);
+                        final List<Double> directionPoints = androidClient.getDirection(result);
                         objectOutputStreamToAndroid.writeObject(directionPoints);
                         objectOutputStreamToAndroid.flush();
                     }
@@ -140,6 +148,10 @@ public final class AndroidClient {
                 }
             }
         }
+    }
+
+    public MasterImpl getMaster() {
+        return master;
     }
 
     private List<Double> getDirection(DirectionsResult directionsResult) {

@@ -5,6 +5,11 @@ import com.google.maps.model.DirectionsResult;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+/**
+ * @author Stefanos Papadogiannis
+ * <p>
+ * Created on 15/4/2017
+ */
 final class MemCache {
 
     private final static int MAX_SIZE = 100;

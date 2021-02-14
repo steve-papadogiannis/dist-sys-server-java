@@ -3,36 +3,44 @@ package gr.papadogiannis.stefanos;
 import com.google.maps.model.DirectionsResult;
 import org.codehaus.jackson.map.ObjectMapper;
 
-import java.io.*;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.nio.ByteBuffer;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.stream.Collectors;
+import java.security.MessageDigest;
+import java.util.logging.Logger;
 import java.text.DecimalFormat;
+import java.net.ServerSocket;
 import java.util.ArrayList;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
+import java.net.Socket;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.io.*;
 
-public class MapWorkerImpl implements MapWorker{
+/**
+ * @author Stefanos Papadogiannis
+ * <p>
+ * Created on 15/4/2017
+ */
+public class MapWorkerImpl implements MapWorker {
 
-    private final int port, reducerPort;
-    private final String reducerIp;
-    private ObjectInputStream objectInputStream;
-    private ObjectOutputStream objectOutputStream;
-    private Socket socket;
+    private static final Logger LOGGER = Logger.getLogger(MapWorkerImpl.class.getName());
+
     private ObjectOutputStream objectOutputStreamToMoscow;
+    private ObjectOutputStream objectOutputStream;
+    private ObjectInputStream objectInputStream;
     private boolean isNotFinished = true;
+    private final int port, reducerPort;
     private ServerSocket serverSocket;
+    private final String reducerIp;
     private Socket socketToMoscow;
+    private Socket socket;
 
     private MapWorkerImpl(int port, String reducerIp, int reducerPort) {
-        System.out.println("gr.papadogiannis.stefanos.MapWorker was created.");
-        this.port = port;
-        this.reducerIp = reducerIp;
+        LOGGER.info("MapWorker was created.");
         this.reducerPort = reducerPort;
+        this.reducerIp = reducerIp;
+        this.port = port;
     }
 
     public static void main(String[] args) {
@@ -57,12 +65,12 @@ public class MapWorkerImpl implements MapWorker{
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        System.out.println("gr.papadogiannis.stefanos.MapWorker " + port + " is exiting...");
+        LOGGER.info(String.format("MapWorker %d is exiting...", port));
     }
 
     @Override
     public void initialize() {
-        System.out.println("gr.papadogiannis.stefanos.MapWorker is waiting for tasks at port " + port + " ... ");
+        System.out.printf("MapWorker is waiting for tasks at port %d... %n", port);
         try {
             serverSocket = new ServerSocket(port);
             while (isNotFinished) {
@@ -100,11 +108,11 @@ public class MapWorkerImpl implements MapWorker{
         try {
             while (isNotFinished) {
                 incoming = objectInputStream.readObject();
-                System.out.println(port + " received " + incoming);
+                LOGGER.info(String.format("%d received %s%n", port, incoming));
                 if (incoming instanceof MapTask) {
                     final MapTask mapTask = (MapTask) incoming;
                     final List<Map<GeoPointPair, DirectionsResult>> map =
-                            map(mapTask.getStartGeopoint(), mapTask.getEndGeoPoint());
+                            map(mapTask.getStartGeoPoint(), mapTask.getEndGeoPoint());
                     sendToReducers(map);
                     notifyMaster();
                 } else if (incoming instanceof String) {
@@ -152,12 +160,12 @@ public class MapWorkerImpl implements MapWorker{
 //        }
         String filename = port + "_directions";
         File file = new File(filename);
-        if(file.exists() && !file.isDirectory()) {
+        if (file.exists() && !file.isDirectory()) {
             try {
                 final FileReader fr = new FileReader(filename);
                 final BufferedReader in = new BufferedReader(fr);
                 String line = null;
-                while((line = in.readLine()) != null) {
+                while ((line = in.readLine()) != null) {
                     list.add(mapper.readValue(line, DirectionsResultWrapper.class));
                 }
                 in.close();
@@ -166,16 +174,16 @@ public class MapWorkerImpl implements MapWorker{
             }
         }
         final long ipPortHash = calculateHash("127.0.0.1" + socket.getLocalPort());
-        final long ipPortHashMod4 = ipPortHash % 4 < 0 ? (- (ipPortHash % 4)) : ipPortHash % 4;
+        final long ipPortHashMod4 = ipPortHash % 4 < 0 ? (-(ipPortHash % 4)) : ipPortHash % 4;
         final List<DirectionsResultWrapper> resultsThatThisWorkerIsInChargeOf = list.stream()
-            .filter(x -> {
-                final long geoPointsHash = calculateHash(String.valueOf(x.getStartPoint().getLatitude()) +
-                                                                String.valueOf(x.getStartPoint().getLongitude()) +
-                                                                String.valueOf(x.getEndPoint().getLatitude()) +
-                                                                String.valueOf(x.getEndPoint().getLongitude()));
-                final long geoPointsHashMod4 = geoPointsHash % 4 < 0 ? (- (geoPointsHash % 4)) : geoPointsHash % 4;
-                return ipPortHashMod4 == geoPointsHashMod4;
-            }).collect(Collectors.toList());
+                .filter(x -> {
+                    final long geoPointsHash = calculateHash(String.valueOf(x.getStartPoint().getLatitude()) +
+                            String.valueOf(x.getStartPoint().getLongitude()) +
+                            String.valueOf(x.getEndPoint().getLatitude()) +
+                            String.valueOf(x.getEndPoint().getLongitude()));
+                    final long geoPointsHashMod4 = geoPointsHash % 4 < 0 ? (-(geoPointsHash % 4)) : geoPointsHash % 4;
+                    return ipPortHashMod4 == geoPointsHashMod4;
+                }).collect(Collectors.toList());
         final List<Map<GeoPointPair, DirectionsResult>> result = new ArrayList<>();
         resultsThatThisWorkerIsInChargeOf.forEach(x -> {
             final Map<GeoPointPair, DirectionsResult> map = new HashMap<>();
@@ -184,9 +192,9 @@ public class MapWorkerImpl implements MapWorker{
             final boolean isEndLatitudeNearIssuedEndLatitude = Math.abs(obj2.getLatitude() - x.getEndPoint().getLatitude()) < 0.0001;
             final boolean isEndLongitudeNearIssuedEndLongitude = Math.abs(obj2.getLongitude() - x.getEndPoint().getLongitude()) < 0.0001;
             if (isStartLatitudeNearIssuedStartLatitude &&
-                isStartLongitudeNearIssuedStartLongitude &&
-                isEndLatitudeNearIssuedEndLatitude &&
-                isEndLongitudeNearIssuedEndLongitude) {
+                    isStartLongitudeNearIssuedStartLongitude &&
+                    isEndLatitudeNearIssuedEndLatitude &&
+                    isEndLongitudeNearIssuedEndLongitude) {
                 final GeoPointPair geoPointPair = new GeoPointPair(
                         new GeoPoint(
                                 roundTo2Decimals(x.getStartPoint().getLatitude()),
@@ -233,8 +241,7 @@ public class MapWorkerImpl implements MapWorker{
 
     @Override
     public void sendToReducers(List<Map<GeoPointPair, DirectionsResult>> map) {
-        System.out.println(port + " is sending " + map
-                + " to reduce worker [" + reducerIp + " : " + reducerPort + " ] ... ");
+        LOGGER.info(String.format("%d is sending %s to reduce worker [ %s : %d ]... %n", port, map, reducerIp, reducerPort));
         try {
             socketToMoscow = new Socket(reducerIp, reducerPort);
             objectOutputStreamToMoscow = new ObjectOutputStream(socketToMoscow.getOutputStream());

@@ -4,6 +4,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.io.Serializable;
 
+/**
+ * @author Stefanos Papadogiannis
+ * <p>
+ * Created on 15/4/2017
+ */
 public final class GeoPoint implements Serializable {
 
     private double latitude, longitude;
@@ -13,7 +18,8 @@ public final class GeoPoint implements Serializable {
         this.longitude = longitude;
     }
 
-    GeoPoint() {}
+    GeoPoint() {
+    }
 
     @JsonProperty("latitude")
     double getLatitude() {
@@ -41,7 +47,7 @@ public final class GeoPoint implements Serializable {
 
     @Override
     public String toString() {
-        return "gr.papadogiannis.stefanos.GeoPoint [ Latitude = " + latitude + ", Longitude = " + longitude + "]";
+        return String.format("GeoPoint [ Latitude = %s, Longitude = %s ]", latitude, longitude);
     }
 
     @Override
@@ -69,7 +75,7 @@ public final class GeoPoint implements Serializable {
         final GeoPoint other = (GeoPoint) obj;
 
         return Double.doubleToLongBits(latitude) == Double.doubleToLongBits(other.latitude) &&
-               Double.doubleToLongBits(longitude) == Double.doubleToLongBits(other.longitude);
+                Double.doubleToLongBits(longitude) == Double.doubleToLongBits(other.longitude);
     }
 
 }
