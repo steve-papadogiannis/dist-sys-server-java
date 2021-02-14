@@ -20,9 +20,9 @@ import java.util.List;
  *
  * Created on 22/4/2017
  */
-public final class Client {
+public final class Server {
 
-    private static final Logger LOGGER = Logger.getLogger(Client.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(Server.class.getName());
 
     private static final String ANDROID_CLIENT_IS_WAITING_MESSAGE = "Client is waiting for tasks at port %d...";
     private static final String SERVER_SOCKET_WAS_CLOSED_ERROR_MESSAGE = "Server socket on client was closed.";
@@ -34,7 +34,7 @@ public final class Client {
     private final MasterImpl master;
     private final int port;
 
-    private Client(MasterImpl master, int port) {
+    private Server(MasterImpl master, int port) {
         LOGGER.info(ANDROID_CLIENT_CREATION_MESSAGE);
         this.master = master;
         this.port = port;
@@ -43,8 +43,8 @@ public final class Client {
     public static void main(String[] args) {
         final MasterImpl master = new MasterImpl(args);
         master.initialize();
-        final Client client = new Client(master, Integer.parseInt(args[0]));
-        client.run();
+        final Server server = new Server(master, Integer.parseInt(args[0]));
+        server.run();
     }
 
     private void falsifyIsNotFinishedFlag() {
@@ -55,12 +55,12 @@ public final class Client {
         LOGGER.info(String.format(ANDROID_CLIENT_IS_WAITING_MESSAGE, port));
         try {
             serverSocket = new ServerSocket(port);
-            final Client client = this;
+            final Server server = this;
             while (isNotFinished) {
                 Socket socket;
                 try {
                     socket = serverSocket.accept();
-                    new Thread(new ClientRunnable(socket, serverSocket, client)).start();
+                    new Thread(new ServerRunnable(socket, serverSocket, server)).start();
                 } catch (SocketException ex) {
                     LOGGER.info(SERVER_SOCKET_WAS_CLOSED_ERROR_MESSAGE);
                 }
@@ -78,20 +78,20 @@ public final class Client {
         LOGGER.info(ANDROID_CLIENT_IS_EXITING_MESSAGE);
     }
 
-    private static class ClientRunnable implements Runnable {
+    private static class ServerRunnable implements Runnable {
 
         private static final String SPACE_REGEX = " ";
 
         private ObjectInputStream objectInputStreamFromAndroid;
         private ObjectOutputStream objectOutputStreamToAndroid;
-        private final Client client;
         private final ServerSocket serverSocket;
         private boolean isNotFinished = true;
+        private final Server server;
         private final Socket socket;
 
-        ClientRunnable(Socket socket, ServerSocket serverSocket, Client client) {
-            this.client = client;
+        ServerRunnable(Socket socket, ServerSocket serverSocket, Server server) {
             this.serverSocket = serverSocket;
+            this.server = server;
             this.socket = socket;
         }
 
@@ -118,26 +118,28 @@ public final class Client {
                         objectOutputStreamToAndroid.close();
                         socket.close();
                     } else if (incomingObject.equals(ApplicationConstants.TERMINATE_SIGNAL)) {
-                        client.falsifyIsNotFinishedFlag();
+                        server.falsifyIsNotFinishedFlag();
                         isNotFinished = false;
                         objectInputStreamFromAndroid.close();
                         objectOutputStreamToAndroid.close();
                         socket.close();
                         if (serverSocket != null)
                             serverSocket.close();
-                        client.getMaster().tearDownApplication();
+                        server.getMaster().tearDownApplication();
                         break;
                     } else {
                         final String incoming = (String) incomingObject;
                         final String[] parts = incoming.split(SPACE_REGEX);
-                        final GeoPoint startGeoPoint = new GeoPoint(Double.parseDouble(parts[0]), Double.parseDouble(parts[1]));
-                        final GeoPoint endGeoPoint = new GeoPoint(Double.parseDouble(parts[2]), Double.parseDouble(parts[3]));
-                        client.getMaster().setStartLatitude(startGeoPoint.getLatitude());
-                        client.getMaster().setStartLongitude(startGeoPoint.getLongitude());
-                        client.getMaster().setEndLatitude(endGeoPoint.getLatitude());
-                        client.getMaster().setEndLongitude(endGeoPoint.getLongitude());
-                        final DirectionsResult result = client.getMaster().searchCache(startGeoPoint, endGeoPoint);
-                        final List<Double> directionPoints = client.getDirection(result);
+                        final GeoPoint startGeoPoint = new GeoPoint(Double.parseDouble(parts[0]),
+                                Double.parseDouble(parts[1]));
+                        final GeoPoint endGeoPoint = new GeoPoint(Double.parseDouble(parts[2]),
+                                Double.parseDouble(parts[3]));
+                        server.getMaster().setStartLatitude(startGeoPoint.getLatitude());
+                        server.getMaster().setStartLongitude(startGeoPoint.getLongitude());
+                        server.getMaster().setEndLatitude(endGeoPoint.getLatitude());
+                        server.getMaster().setEndLongitude(endGeoPoint.getLongitude());
+                        final DirectionsResult result = server.getMaster().searchCache(startGeoPoint, endGeoPoint);
+                        final List<Double> directionPoints = server.getDirection(result);
                         objectOutputStreamToAndroid.writeObject(directionPoints);
                         objectOutputStreamToAndroid.flush();
                     }

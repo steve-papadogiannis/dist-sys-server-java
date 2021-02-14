@@ -1,0 +1,53 @@
+@startuml
+participant client
+actor User
+boundary Server
+control ServerRunnable
+control Master
+control MapNode
+control ReduceNode
+control MapWorker
+control ReduceWorker
+control ReduceWorkerRunnable
+database Mongo
+boundary "Google Geolocation API" as GGA
+autonumber "<b>[000]"
+
+== Initialization ==
+
+User -> ReduceWorker : Initializes
+activate ReduceWorker
+
+ReduceWorker -> ReduceWorker : Opens Server Socket
+
+User -> MapWorker : Initializes
+activate MapWorker
+
+MapWorker -> MapWorker : Opens Server Socket
+
+User -> Server: Initializes
+activate Server
+
+Server -> Master : Initializes
+activate Master
+
+Master -> MapNode : Initializes
+activate MapNode
+
+Master -> ReduceNode : Initializes
+activate ReduceNode
+
+MapNode -> MapWorker : Opens socket
+
+MapWorker -> MapWorker : Accepts connection
+
+ReduceNode -> ReduceWorker : Opens socket
+
+ReduceWorker -> ReduceWorkerRunnable : Accepts connection
+activate ReduceWorkerRunnable
+
+Server -> Server : Opens Server Socket
+
+== Runtime ==
+
+@enduml

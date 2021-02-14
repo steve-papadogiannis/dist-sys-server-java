@@ -16,10 +16,12 @@ public final class MemCache {
     private final static int MAX_SIZE = 100;
 
     private final Map<GeoPointPair, DirectionsResult> map = new LinkedHashMap<GeoPointPair, DirectionsResult>() {
+
         @Override
         protected boolean removeEldestEntry(Map.Entry<GeoPointPair, DirectionsResult> eldest) {
             return size() > MAX_SIZE;
         }
+
     };
 
     public void insertDirections(GeoPointPair geoPointsPair, DirectionsResult directions) {

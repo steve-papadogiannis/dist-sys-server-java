@@ -27,19 +27,25 @@ public final class ReduceWorkerImpl implements ReduceWorker {
 
     private static final Logger LOGGER = Logger.getLogger(ReduceWorkerImpl.class.getName());
 
+    private static final String REDUCER_WORKER_IS_WAITING_FOR_TASKS_MESSAGE =
+            "ReducerWorker is waiting for tasks at port %d...";
+    private static final String SERVER_SOCKET_ON_REDUCE_WORKER_WAS_CLOSED_ERROR_MESSAGE =
+            "Server socket on reduce worker was closed.";
+    private static final String REDUCE_WORKER_IS_EXITING_MESSAGE = "ReduceWorker %d is exiting...";
+    private static final String REDUCE_WORKER_WAS_CREATED_MESSAGE = "ReduceWorker was created.";
+
     private static final Map<GeoPointPair, List<DirectionsResult>> mapToReturn = new HashMap<>();
-    public static final String REDUCE_WORKER_IS_EXITING_MESSAGE = "ReduceWorker %d is exiting...%n";
     private boolean isNotFinished = true;
     private ServerSocket serverSocket;
     private final int port;
 
     private ReduceWorkerImpl(int port) {
-        LOGGER.info("ReduceWorker was created.");
+        LOGGER.info(REDUCE_WORKER_WAS_CREATED_MESSAGE);
         this.port = port;
     }
 
     public static void main(String[] args) {
-        ReduceWorkerImpl reduceWorker = new ReduceWorkerImpl(Integer.parseInt(args[0]));
+        final ReduceWorkerImpl reduceWorker = new ReduceWorkerImpl(Integer.parseInt(args[0]));
         reduceWorker.run();
     }
 
@@ -64,7 +70,7 @@ public final class ReduceWorkerImpl implements ReduceWorker {
 
     @Override
     public void initialize() {
-        LOGGER.info(String.format("ReducerWorker is waiting for tasks at port %d... %n", port));
+        LOGGER.info(String.format(REDUCER_WORKER_IS_WAITING_FOR_TASKS_MESSAGE, port));
         try {
             serverSocket = new ServerSocket(port);
             ReduceWorkerImpl reduceWorker = this;
@@ -74,17 +80,17 @@ public final class ReduceWorkerImpl implements ReduceWorker {
                     socket = serverSocket.accept();
                     new Thread(new ReduceWorkerRunnable(socket, serverSocket, reduceWorker)).start();
                 } catch (SocketException ex) {
-                    System.out.println("Server socket on reduce worker was closed.");
+                    LOGGER.severe(SERVER_SOCKET_ON_REDUCE_WORKER_WAS_CLOSED_ERROR_MESSAGE);
                 }
             }
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (IOException ioException) {
+            LOGGER.severe(ioException.toString());
         } finally {
             try {
                 if (serverSocket != null)
                     serverSocket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
+            } catch (IOException ioException) {
+                LOGGER.severe(ioException.toString());
             }
         }
     }
@@ -128,8 +134,8 @@ public final class ReduceWorkerImpl implements ReduceWorker {
                 objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
                 objectInputStream = new ObjectInputStream(socket.getInputStream());
                 waitForTasksThread();
-            } catch (IOException e) {
-                e.printStackTrace();
+            } catch (IOException ioException) {
+                LOGGER.severe(ioException.toString());
             }
         }
 
@@ -171,8 +177,8 @@ public final class ReduceWorkerImpl implements ReduceWorker {
                         LOGGER.info(String.format(RECEIVED_MESSAGE, serverSocket.getLocalPort(), incoming));
                     }
                 }
-            } catch (IOException | ClassNotFoundException | InterruptedException e) {
-                e.printStackTrace();
+            } catch (IOException | ClassNotFoundException | InterruptedException exception) {
+                LOGGER.severe(exception.toString());
             } finally {
                 isNotFinished = false;
                 try {
@@ -182,8 +188,8 @@ public final class ReduceWorkerImpl implements ReduceWorker {
 //                        objectOutputStream.close();
                     if (socket != null)
                         socket.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
+                } catch (IOException ioException) {
+                    LOGGER.severe(ioException.toString());
                 }
             }
         }
@@ -193,8 +199,8 @@ public final class ReduceWorkerImpl implements ReduceWorker {
             try {
                 objectOutputStream.writeObject(mapToReturn);
                 objectOutputStream.flush();
-            } catch (IOException e) {
-                e.printStackTrace();
+            } catch (IOException ioException) {
+                LOGGER.severe(ioException.toString());
             }
         }
 

@@ -154,7 +154,7 @@ public class MasterImpl implements Master {
                 LOGGER.info(INVOCATION_OF_GOOGLE_API_MESSAGE);
                 final DirectionsResult googleDirectionsAPI = askGoogleDirectionsAPI(startGeoPoint, endGeoPoint);
                 updateCache(startGeoPoint, endGeoPoint, googleDirectionsAPI);
-//                updateDatabase(startGeoPoint, endGeoPoint, googleDirectionsAPI);
+                updateDatabase(startGeoPoint, endGeoPoint, googleDirectionsAPI);
                 return googleDirectionsAPI;
             } else {
                 LOGGER.info(A_WORKER_HAD_THE_DIRECTIONS_ISSUED_MESSAGE);

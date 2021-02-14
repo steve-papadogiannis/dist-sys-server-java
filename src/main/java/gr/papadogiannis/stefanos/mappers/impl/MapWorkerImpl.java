@@ -1,5 +1,8 @@
 package gr.papadogiannis.stefanos.mappers.impl;
 
+import com.mongodb.DB;
+import com.mongodb.DBCollection;
+import com.mongodb.Mongo;
 import gr.papadogiannis.stefanos.constants.ApplicationConstants;
 import gr.papadogiannis.stefanos.models.DirectionsResultWrapper;
 import gr.papadogiannis.stefanos.models.GeoPointPair;
@@ -8,6 +11,8 @@ import gr.papadogiannis.stefanos.models.GeoPoint;
 import gr.papadogiannis.stefanos.models.MapTask;
 import com.google.maps.model.DirectionsResult;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.mongojack.DBCursor;
+import org.mongojack.JacksonDBCollection;
 
 import java.security.NoSuchAlgorithmException;
 import java.nio.charset.StandardCharsets;
@@ -94,12 +99,12 @@ public class MapWorkerImpl implements MapWorker {
                     objectInputStream = new ObjectInputStream(socket.getInputStream());
                     objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
                     waitForTasksThread();
-                } catch (IOException ex) {
-                    ex.printStackTrace();
+                } catch (IOException ioException) {
+                    LOGGER.severe(ioException.toString());
                 }
             }
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (IOException ioException) {
+            LOGGER.severe(ioException.toString());
         } finally {
             isNotFinished = false;
             try {
@@ -111,8 +116,8 @@ public class MapWorkerImpl implements MapWorker {
                     socket.close();
                 if (serverSocket != null)
                     serverSocket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
+            } catch (IOException ioException) {
+                LOGGER.severe(ioException.toString());
             }
         }
     }
@@ -141,8 +146,8 @@ public class MapWorkerImpl implements MapWorker {
                 }
 
             }
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
+        } catch (IOException | ClassNotFoundException exception) {
+            LOGGER.severe(exception.toString());
         } finally {
             isNotFinished = false;
             try {
@@ -154,40 +159,40 @@ public class MapWorkerImpl implements MapWorker {
                     socket.close();
                 if (serverSocket != null)
                     serverSocket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
+            } catch (IOException ioException) {
+                LOGGER.severe(ioException.toString());
             }
         }
     }
 
     @Override
     public List<Map<GeoPointPair, DirectionsResult>> map(GeoPoint startGeoPoint, GeoPoint endGeoPoint) {
-//        final Mongo mongo = new Mongo("127.0.0.1", 27017);
-//        final DB db = mongo.getDB("local");
-//        final DBCollection dbCollection = db.getCollection("directions");
-//        final JacksonDBCollection<gr.papadogiannis.stefanos.models.DirectionsResultWrapper, String> coll = JacksonDBCollection.wrap(dbCollection,
-//            gr.papadogiannis.stefanos.models.DirectionsResultWrapper.class, String.class);
-//        final DBCursor<gr.papadogiannis.stefanos.models.DirectionsResultWrapper> cursor = coll.find();
+        final Mongo mongo = new Mongo("127.0.0.1", 27017);
+        final DB db = mongo.getDB("local");
+        final DBCollection dbCollection = db.getCollection("directions");
+        final JacksonDBCollection<DirectionsResultWrapper, String> coll = JacksonDBCollection.wrap(dbCollection,
+            DirectionsResultWrapper.class, String.class);
+        final DBCursor<DirectionsResultWrapper> cursor = coll.find();
         final List<DirectionsResultWrapper> list = new ArrayList<>();
-        final ObjectMapper mapper = new ObjectMapper();
-//        while (cursor.hasNext()) {
-//           list.add(cursor.next());
-//        }
-        String filename = port + "_directions";
-        File file = new File(filename);
-        if (file.exists() && !file.isDirectory()) {
-            try {
-                final FileReader fr = new FileReader(filename);
-                final BufferedReader in = new BufferedReader(fr);
-                String line = null;
-                while ((line = in.readLine()) != null) {
-                    list.add(mapper.readValue(line, DirectionsResultWrapper.class));
-                }
-                in.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+//        final ObjectMapper mapper = new ObjectMapper();
+        while (cursor.hasNext()) {
+           list.add(cursor.next());
         }
+//        String filename = port + "_directions";
+//        File file = new File(filename);
+//        if (file.exists() && !file.isDirectory()) {
+//            try {
+//                final FileReader fr = new FileReader(filename);
+//                final BufferedReader in = new BufferedReader(fr);
+//                String line = null;
+//                while ((line = in.readLine()) != null) {
+//                    list.add(mapper.readValue(line, DirectionsResultWrapper.class));
+//                }
+//                in.close();
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//        }
         final long ipPortHash = calculateHash("127.0.0.1" + socket.getLocalPort());
         final long ipPortHashMod4 = ipPortHash % 4 < 0 ? (-(ipPortHash % 4)) : ipPortHash % 4;
         final List<DirectionsResultWrapper> resultsThatThisWorkerIsInChargeOf = list.stream()
@@ -202,10 +207,14 @@ public class MapWorkerImpl implements MapWorker {
         final List<Map<GeoPointPair, DirectionsResult>> result = new ArrayList<>();
         resultsThatThisWorkerIsInChargeOf.forEach(x -> {
             final Map<GeoPointPair, DirectionsResult> map = new HashMap<>();
-            final boolean isStartLatitudeNearIssuedStartLatitude = Math.abs(startGeoPoint.getLatitude() - x.getStartPoint().getLatitude()) < 0.0001;
-            final boolean isStartLongitudeNearIssuedStartLongitude = Math.abs(startGeoPoint.getLongitude() - x.getStartPoint().getLongitude()) < 0.0001;
-            final boolean isEndLatitudeNearIssuedEndLatitude = Math.abs(endGeoPoint.getLatitude() - x.getEndPoint().getLatitude()) < 0.0001;
-            final boolean isEndLongitudeNearIssuedEndLongitude = Math.abs(endGeoPoint.getLongitude() - x.getEndPoint().getLongitude()) < 0.0001;
+            final boolean isStartLatitudeNearIssuedStartLatitude = Math.abs(
+                    startGeoPoint.getLatitude() - x.getStartPoint().getLatitude()) < 0.0001;
+            final boolean isStartLongitudeNearIssuedStartLongitude = Math.abs(
+                    startGeoPoint.getLongitude() - x.getStartPoint().getLongitude()) < 0.0001;
+            final boolean isEndLatitudeNearIssuedEndLatitude = Math.abs(
+                    endGeoPoint.getLatitude() - x.getEndPoint().getLatitude()) < 0.0001;
+            final boolean isEndLongitudeNearIssuedEndLongitude = Math.abs(
+                    endGeoPoint.getLongitude() - x.getEndPoint().getLongitude()) < 0.0001;
             if (isStartLatitudeNearIssuedStartLatitude &&
                     isStartLongitudeNearIssuedStartLongitude &&
                     isEndLatitudeNearIssuedEndLatitude &&
@@ -230,8 +239,8 @@ public class MapWorkerImpl implements MapWorker {
         try {
             objectOutputStream.writeObject(ApplicationConstants.ACK_SIGNAL);
             objectOutputStream.flush();
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (IOException ioException) {
+            LOGGER.severe(ioException.toString());
         }
     }
 
@@ -242,8 +251,8 @@ public class MapWorkerImpl implements MapWorker {
         MessageDigest md = null;
         try {
             md = MessageDigest.getInstance(MD_5_ALGORITHM);
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
+        } catch (NoSuchAlgorithmException noSuchAlgorithmException) {
+            LOGGER.severe(noSuchAlgorithmException.toString());
         }
         byte[] theDigest = md != null ? md.digest(bytesOfMessage) : new byte[0];
         final ByteBuffer bb = ByteBuffer.wrap(theDigest);
@@ -260,8 +269,8 @@ public class MapWorkerImpl implements MapWorker {
             objectOutputStreamToReducer.flush();
             objectOutputStreamToReducer.writeObject(ApplicationConstants.EXIT_SIGNAL);
             objectOutputStreamToReducer.flush();
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (IOException ioException) {
+            LOGGER.severe(ioException.toString());
         }
     }
 
