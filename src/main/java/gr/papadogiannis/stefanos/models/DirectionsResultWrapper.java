@@ -20,7 +20,7 @@ public final class DirectionsResultWrapper {
 
     private DirectionsResult directionsResult;
 
-    DirectionsResultWrapper() { }
+    public DirectionsResultWrapper() { }
 
     public DirectionsResultWrapper(GeoPoint startPoint, GeoPoint endPoint, DirectionsResult directionsResult) {
         this.startPoint = startPoint;

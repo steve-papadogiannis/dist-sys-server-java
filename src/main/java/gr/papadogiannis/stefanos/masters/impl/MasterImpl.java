@@ -34,6 +34,15 @@ public class MasterImpl implements Master {
 
     private static final Logger LOGGER = Logger.getLogger(MasterImpl.class.getName());
 
+    private static final String QUERIED_DIRECTIONS_WERE_FETCHED_FROM_MEM_CACHE_MESSAGE =
+            "Master: Queried Directions were fetched from MemCache";
+    private static final String A_WORKER_HAD_THE_DIRECTIONS_ISSUED_MESSAGE =
+            "Master: A worker had the directions issued";
+    private static final String INVOCATION_OF_GOOGLE_API_MESSAGE = "Master: I invoke google API for directions!";
+    private static final String SENDING_TO_MAP_WORKER_MESSAGE = "Sending %s to map worker %s...";
+    public static final String SOMETHING_WENT_WRONG_ON_ACKNOWLEDGEMENT_ERROR_MESSAGE = "Something went wrong on acknowledgement";
+    public static final String SENDING_ACK_TO_REDUCE_WORKER_MESSAGE = "Sending ack to reduce worker %s... %n";
+
     private final List<Node> reducerNodes = new ArrayList<>();
     private final List<Node> mapperNodes = new ArrayList<>();
     private final Scanner input = new Scanner(System.in);
@@ -142,17 +151,17 @@ public class MasterImpl implements Master {
         if (memCachedDirections == null) {
             distributeToMappers(startGeoPoint, endGeoPoint);
             if (resultOfMapReduce == null) {
-                LOGGER.info("Master: I invoke google api for directions!");
+                LOGGER.info(INVOCATION_OF_GOOGLE_API_MESSAGE);
                 final DirectionsResult googleDirectionsAPI = askGoogleDirectionsAPI(startGeoPoint, endGeoPoint);
                 updateCache(startGeoPoint, endGeoPoint, googleDirectionsAPI);
 //                updateDatabase(startGeoPoint, endGeoPoint, googleDirectionsAPI);
                 return googleDirectionsAPI;
             } else {
-                LOGGER.info("Master: A worker had the directions issued");
+                LOGGER.info(A_WORKER_HAD_THE_DIRECTIONS_ISSUED_MESSAGE);
                 return resultOfMapReduce;
             }
         } else {
-            LOGGER.info("Master: Queried Directions were fetched from MemCache");
+            LOGGER.info(QUERIED_DIRECTIONS_WERE_FETCHED_FROM_MEM_CACHE_MESSAGE);
             return memCachedDirections;
         }
     }
@@ -161,7 +170,7 @@ public class MasterImpl implements Master {
     public void distributeToMappers(GeoPoint startGeoPoint, GeoPoint endGeoPoint) {
         final MapTask mapTask = new MapTask(startGeoPoint, endGeoPoint);
         for (Node node : mapperNodes) {
-            LOGGER.info(String.format("Sending %s to map worker %s... %n", mapTask, node));
+            LOGGER.info(String.format(SENDING_TO_MAP_WORKER_MESSAGE, mapTask, node));
             node.sendMapTask(mapTask);
         }
         waitForMappers();
@@ -177,17 +186,17 @@ public class MasterImpl implements Master {
             }
         }
         if (acknowledgements.size() == 4 &&
-                acknowledgements.stream().allMatch(x -> x.equals("ack"))) {
+                acknowledgements.stream().allMatch(x -> x.equals(ApplicationConstants.ACK_SIGNAL))) {
             ackToReducers();
         } else {
-            LOGGER.info("Something went wrong on acknowledgement");
+            LOGGER.info(SOMETHING_WENT_WRONG_ON_ACKNOWLEDGEMENT_ERROR_MESSAGE);
         }
     }
 
     @Override
     public void ackToReducers() {
         for (Node node : reducerNodes) {
-            LOGGER.info(String.format("Sending ack to reduce worker %s... %n", node));
+            LOGGER.info(String.format(SENDING_ACK_TO_REDUCE_WORKER_MESSAGE, node));
             node.sendAck();
         }
         collectDataFromReducer();
@@ -285,9 +294,11 @@ public class MasterImpl implements Master {
 
     private static class Node {
 
+        public static final String TO_STRING_MESSAGE = "[ %s : %d ]";
+
         @Override
         public String toString() {
-            return String.format("[ %s : %d ]", ip, port);
+            return String.format(TO_STRING_MESSAGE, ip, port);
         }
 
         private final int port;
@@ -335,7 +346,7 @@ public class MasterImpl implements Master {
 
         void closeOutputStream() {
             try {
-                objectOutputStream.writeObject("exit");
+                objectOutputStream.writeObject(ApplicationConstants.EXIT_SIGNAL);
                 objectOutputStream.flush();
                 if (objectOutputStream != null)
                     objectOutputStream.close();
@@ -382,7 +393,7 @@ public class MasterImpl implements Master {
 
         void sendAck() {
             try {
-                objectOutputStream.writeObject("ack");
+                objectOutputStream.writeObject(ApplicationConstants.ACK_SIGNAL);
                 objectOutputStream.flush();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -399,7 +410,7 @@ public class MasterImpl implements Master {
         }
     }
 
-    private class MapperNode extends Node {
+    private static class MapperNode extends Node {
 
         private MapperNode(int port, String ip) {
             super(port, ip);
@@ -407,7 +418,7 @@ public class MasterImpl implements Master {
 
     }
 
-    private class ReducerNode extends Node {
+    private static class ReducerNode extends Node {
 
         private ReducerNode(int port, String ip) {
             super(port, ip);
@@ -416,13 +427,12 @@ public class MasterImpl implements Master {
         @Override
         void closeOutputStream() {
             try {
-                getObjectOutputStream().writeObject("terminate");
+                getObjectOutputStream().writeObject(ApplicationConstants.TERMINATE_SIGNAL);
                 getObjectOutputStream().flush();
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
-
 
     }
 

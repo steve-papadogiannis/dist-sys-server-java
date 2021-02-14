@@ -1,8 +1,9 @@
 package gr.papadogiannis.stefanos.clients;
 
-import com.google.maps.model.*;
+import gr.papadogiannis.stefanos.constants.ApplicationConstants;
 import gr.papadogiannis.stefanos.masters.impl.MasterImpl;
 import gr.papadogiannis.stefanos.models.GeoPoint;
+import com.google.maps.model.*;
 
 import java.io.ObjectOutputStream;
 import java.io.ObjectInputStream;
@@ -19,17 +20,22 @@ import java.util.List;
  *
  * Created on 22/4/2017
  */
-public final class AndroidClient {
+public final class Client {
 
-    private static final Logger LOGGER = Logger.getLogger(AndroidClient.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(Client.class.getName());
+
+    private static final String ANDROID_CLIENT_IS_WAITING_MESSAGE = "Client is waiting for tasks at port %d...";
+    private static final String SERVER_SOCKET_WAS_CLOSED_ERROR_MESSAGE = "Server socket on client was closed.";
+    private static final String ANDROID_CLIENT_IS_EXITING_MESSAGE = "Client is exiting...";
+    private static final String ANDROID_CLIENT_CREATION_MESSAGE = "Client was created.";
 
     private boolean isNotFinished = true;
     private ServerSocket serverSocket;
     private final MasterImpl master;
     private final int port;
 
-    private AndroidClient(MasterImpl master, int port) {
-        LOGGER.info("AndroidClient was created.");
+    private Client(MasterImpl master, int port) {
+        LOGGER.info(ANDROID_CLIENT_CREATION_MESSAGE);
         this.master = master;
         this.port = port;
     }
@@ -37,8 +43,8 @@ public final class AndroidClient {
     public static void main(String[] args) {
         final MasterImpl master = new MasterImpl(args);
         master.initialize();
-        final AndroidClient androidClient = new AndroidClient(master, Integer.parseInt(args[0]));
-        androidClient.run();
+        final Client client = new Client(master, Integer.parseInt(args[0]));
+        client.run();
     }
 
     private void falsifyIsNotFinishedFlag() {
@@ -46,43 +52,45 @@ public final class AndroidClient {
     }
 
     private void run() {
-        LOGGER.info(String.format("AndroidClient is waiting for tasks at port %d... ", port));
+        LOGGER.info(String.format(ANDROID_CLIENT_IS_WAITING_MESSAGE, port));
         try {
             serverSocket = new ServerSocket(port);
-            final AndroidClient androidClient = this;
+            final Client client = this;
             while (isNotFinished) {
                 Socket socket;
                 try {
                     socket = serverSocket.accept();
-                    new Thread(new A(socket, serverSocket, androidClient)).start();
+                    new Thread(new ClientRunnable(socket, serverSocket, client)).start();
                 } catch (SocketException ex) {
-                    LOGGER.info("Server socket on android client was closed.");
+                    LOGGER.info(SERVER_SOCKET_WAS_CLOSED_ERROR_MESSAGE);
                 }
             }
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (IOException ioException) {
+            LOGGER.severe(ioException.toString());
         } finally {
             try {
                 if (serverSocket != null)
                     serverSocket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
+            } catch (IOException ioException) {
+                LOGGER.severe(ioException.toString());
             }
         }
-        LOGGER.info("AndroidClient is exiting...");
+        LOGGER.info(ANDROID_CLIENT_IS_EXITING_MESSAGE);
     }
 
-    private static class A implements Runnable {
+    private static class ClientRunnable implements Runnable {
+
+        private static final String SPACE_REGEX = " ";
 
         private ObjectInputStream objectInputStreamFromAndroid;
         private ObjectOutputStream objectOutputStreamToAndroid;
-        private final AndroidClient androidClient;
+        private final Client client;
         private final ServerSocket serverSocket;
         private boolean isNotFinished = true;
         private final Socket socket;
 
-        A(Socket socket, ServerSocket serverSocket, AndroidClient androidClient) {
-            this.androidClient = androidClient;
+        ClientRunnable(Socket socket, ServerSocket serverSocket, Client client) {
+            this.client = client;
             this.serverSocket = serverSocket;
             this.socket = socket;
         }
@@ -104,38 +112,38 @@ public final class AndroidClient {
                 while (isNotFinished) {
                     incomingObject = objectInputStreamFromAndroid.readObject();
 
-                    if (incomingObject.equals("exit")) {
+                    if (incomingObject.equals(ApplicationConstants.EXIT_SIGNAL)) {
                         isNotFinished = false;
                         objectInputStreamFromAndroid.close();
                         objectOutputStreamToAndroid.close();
                         socket.close();
-                    } else if (incomingObject.equals("terminate")) {
-                        androidClient.falsifyIsNotFinishedFlag();
+                    } else if (incomingObject.equals(ApplicationConstants.TERMINATE_SIGNAL)) {
+                        client.falsifyIsNotFinishedFlag();
                         isNotFinished = false;
                         objectInputStreamFromAndroid.close();
                         objectOutputStreamToAndroid.close();
                         socket.close();
                         if (serverSocket != null)
                             serverSocket.close();
-                        androidClient.getMaster().tearDownApplication();
+                        client.getMaster().tearDownApplication();
                         break;
                     } else {
                         final String incoming = (String) incomingObject;
-                        final String[] parts = incoming.split(" ");
+                        final String[] parts = incoming.split(SPACE_REGEX);
                         final GeoPoint startGeoPoint = new GeoPoint(Double.parseDouble(parts[0]), Double.parseDouble(parts[1]));
                         final GeoPoint endGeoPoint = new GeoPoint(Double.parseDouble(parts[2]), Double.parseDouble(parts[3]));
-                        androidClient.getMaster().setStartLatitude(startGeoPoint.getLatitude());
-                        androidClient.getMaster().setStartLongitude(startGeoPoint.getLongitude());
-                        androidClient.getMaster().setEndLatitude(endGeoPoint.getLatitude());
-                        androidClient.getMaster().setEndLongitude(endGeoPoint.getLongitude());
-                        final DirectionsResult result = androidClient.getMaster().searchCache(startGeoPoint, endGeoPoint);
-                        final List<Double> directionPoints = androidClient.getDirection(result);
+                        client.getMaster().setStartLatitude(startGeoPoint.getLatitude());
+                        client.getMaster().setStartLongitude(startGeoPoint.getLongitude());
+                        client.getMaster().setEndLatitude(endGeoPoint.getLatitude());
+                        client.getMaster().setEndLongitude(endGeoPoint.getLongitude());
+                        final DirectionsResult result = client.getMaster().searchCache(startGeoPoint, endGeoPoint);
+                        final List<Double> directionPoints = client.getDirection(result);
                         objectOutputStreamToAndroid.writeObject(directionPoints);
                         objectOutputStreamToAndroid.flush();
                     }
                 }
-            } catch (IOException | ClassNotFoundException e) {
-                e.printStackTrace();
+            } catch (IOException | ClassNotFoundException exception) {
+                LOGGER.severe(exception.toString());
             } finally {
                 isNotFinished = false;
                 try {
@@ -145,8 +153,8 @@ public final class AndroidClient {
                         objectInputStreamFromAndroid.close();
                     if (socket != null)
                         socket.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
+                } catch (IOException ioException) {
+                    LOGGER.severe(ioException.toString());
                 }
             }
         }

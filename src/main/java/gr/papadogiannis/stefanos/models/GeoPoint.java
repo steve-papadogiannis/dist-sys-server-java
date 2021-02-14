@@ -18,7 +18,7 @@ public final class GeoPoint implements Serializable {
         this.longitude = longitude;
     }
 
-    GeoPoint() {
+    public GeoPoint() {
     }
 
     @JsonProperty("latitude")

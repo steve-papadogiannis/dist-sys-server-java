@@ -1,6 +1,7 @@
 package gr.papadogiannis.stefanos.reducers.impl;
 
 import com.google.maps.model.DirectionsResult;
+import gr.papadogiannis.stefanos.constants.ApplicationConstants;
 import gr.papadogiannis.stefanos.models.GeoPointPair;
 import gr.papadogiannis.stefanos.reducers.ReduceWorker;
 
@@ -27,7 +28,7 @@ public final class ReduceWorkerImpl implements ReduceWorker {
     private static final Logger LOGGER = Logger.getLogger(ReduceWorkerImpl.class.getName());
 
     private static final Map<GeoPointPair, List<DirectionsResult>> mapToReturn = new HashMap<>();
-    private CountDownLatch countDownLatch = new CountDownLatch(4);
+    public static final String REDUCE_WORKER_IS_EXITING_MESSAGE = "ReduceWorker %d is exiting...%n";
     private boolean isNotFinished = true;
     private ServerSocket serverSocket;
     private final int port;
@@ -63,7 +64,7 @@ public final class ReduceWorkerImpl implements ReduceWorker {
 
     @Override
     public void initialize() {
-        System.out.println("ReducerWorker is waiting for tasks at port " + port + " ... ");
+        LOGGER.info(String.format("ReducerWorker is waiting for tasks at port %d... %n", port));
         try {
             serverSocket = new ServerSocket(port);
             ReduceWorkerImpl reduceWorker = this;
@@ -71,7 +72,7 @@ public final class ReduceWorkerImpl implements ReduceWorker {
                 Socket socket;
                 try {
                     socket = serverSocket.accept();
-                    new Thread(new A(socket, serverSocket, reduceWorker)).start();
+                    new Thread(new ReduceWorkerRunnable(socket, serverSocket, reduceWorker)).start();
                 } catch (SocketException ex) {
                     System.out.println("Server socket on reduce worker was closed.");
                 }
@@ -99,11 +100,15 @@ public final class ReduceWorkerImpl implements ReduceWorker {
 
     private void run() {
         initialize();
-        LOGGER.info(String.format("ReduceWorker %d is exiting...%n", port));
+        LOGGER.info(String.format(REDUCE_WORKER_IS_EXITING_MESSAGE, port));
     }
 
-    private class A implements Runnable {
+    private static class ReduceWorkerRunnable implements Runnable {
 
+        private static final String SENDING_RESULT_TO_MASTER_MESSAGE = "Sending result %s to master from %d...";
+        private static final String RECEIVED_MESSAGE = "%d received %s";
+
+        private CountDownLatch countDownLatch = new CountDownLatch(4);
         private ObjectOutputStream objectOutputStream;
         private ObjectInputStream objectInputStream;
         private final ReduceWorkerImpl reduceWorker;
@@ -111,10 +116,10 @@ public final class ReduceWorkerImpl implements ReduceWorker {
         private boolean isNotFinished = true;
         private final Socket socket;
 
-        A(Socket socket, ServerSocket serverSocket, ReduceWorkerImpl reduceWorker) {
+        ReduceWorkerRunnable(Socket socket, ServerSocket serverSocket, ReduceWorkerImpl reduceWorker) {
             this.serverSocket = serverSocket;
-            this.socket = socket;
             this.reduceWorker = reduceWorker;
+            this.socket = socket;
         }
 
         @Override
@@ -135,21 +140,21 @@ public final class ReduceWorkerImpl implements ReduceWorker {
                     incomingObject = objectInputStream.readObject();
                     if (incomingObject instanceof String) {
                         final String inputLine = (String) incomingObject;
-                        LOGGER.info(String.format("%d received %s%n", port, inputLine));
+                        LOGGER.info(String.format(RECEIVED_MESSAGE, serverSocket.getLocalPort(), inputLine));
                         switch (inputLine) {
-                            case "ack":
+                            case ApplicationConstants.ACK_SIGNAL:
                                 countDownLatch.await();
                                 sendResults();
                                 countDownLatch = new CountDownLatch(4);
                                 break;
-                            case "exit":
+                            case ApplicationConstants.EXIT_SIGNAL:
                                 countDownLatch.countDown();
                                 isNotFinished = false;
                                 objectInputStream.close();
 //                                objectOutputStream.close();
                                 socket.close();
                                 break;
-                            case "terminate":
+                            case ApplicationConstants.TERMINATE_SIGNAL:
                                 reduceWorker.falsifyIsNotFinishedFlag();
                                 isNotFinished = false;
                                 objectInputStream.close();
@@ -163,7 +168,7 @@ public final class ReduceWorkerImpl implements ReduceWorker {
                         final List<Map<GeoPointPair, DirectionsResult>> incoming
                                 = (List<Map<GeoPointPair, DirectionsResult>>) incomingObject;
                         reduce(incoming);
-                        LOGGER.info(String.format("%d received %s%n", port, incoming));
+                        LOGGER.info(String.format(RECEIVED_MESSAGE, serverSocket.getLocalPort(), incoming));
                     }
                 }
             } catch (IOException | ClassNotFoundException | InterruptedException e) {
@@ -184,7 +189,7 @@ public final class ReduceWorkerImpl implements ReduceWorker {
         }
 
         void sendResults() {
-            LOGGER.info(String.format("Sending result %s to master from %d... %n", mapToReturn, port));
+            LOGGER.info(String.format(SENDING_RESULT_TO_MASTER_MESSAGE, mapToReturn, serverSocket.getLocalPort()));
             try {
                 objectOutputStream.writeObject(mapToReturn);
                 objectOutputStream.flush();

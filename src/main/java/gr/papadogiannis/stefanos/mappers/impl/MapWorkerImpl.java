@@ -1,14 +1,16 @@
 package gr.papadogiannis.stefanos.mappers.impl;
 
-import com.google.maps.model.DirectionsResult;
-import gr.papadogiannis.stefanos.mappers.MapWorker;
+import gr.papadogiannis.stefanos.constants.ApplicationConstants;
 import gr.papadogiannis.stefanos.models.DirectionsResultWrapper;
-import gr.papadogiannis.stefanos.models.GeoPoint;
 import gr.papadogiannis.stefanos.models.GeoPointPair;
+import gr.papadogiannis.stefanos.mappers.MapWorker;
+import gr.papadogiannis.stefanos.models.GeoPoint;
 import gr.papadogiannis.stefanos.models.MapTask;
+import com.google.maps.model.DirectionsResult;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import java.security.NoSuchAlgorithmException;
+import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
 import java.security.MessageDigest;
 import java.util.logging.Logger;
@@ -31,25 +33,33 @@ public class MapWorkerImpl implements MapWorker {
 
     private static final Logger LOGGER = Logger.getLogger(MapWorkerImpl.class.getName());
 
-    private ObjectOutputStream objectOutputStreamToMoscow;
+    private static final String SENDING_TO_REDUCE_WORKER_MESSAGE = "%d is sending %s to reduce worker [ %s : %d ]...";
+    private static final String MAP_WORKER_IS_WAITING_MESSAGE = "MapWorker is waiting for tasks at port %d...";
+    private static final String MAP_WORKER_IS_EXITING_MESSAGE = "MapWorker %d is exiting...";
+    private static final String MAP_WORKER_WAS_CREATED_MESSAGE = "MapWorker was created.";
+    private static final String RECEIVED_MESSAGE = "%d received %s";
+    private static final String DECIMAL_FORMAT_PATTERN = "###.##";
+    private static final String MD_5_ALGORITHM = "MD5";
+
+    private ObjectOutputStream objectOutputStreamToReducer;
     private ObjectOutputStream objectOutputStream;
     private ObjectInputStream objectInputStream;
     private boolean isNotFinished = true;
     private final int port, reducerPort;
     private ServerSocket serverSocket;
     private final String reducerIp;
-    private Socket socketToMoscow;
+    private Socket socketToReducer;
     private Socket socket;
 
     private MapWorkerImpl(int port, String reducerIp, int reducerPort) {
-        LOGGER.info("MapWorker was created.");
+        LOGGER.info(MAP_WORKER_WAS_CREATED_MESSAGE);
         this.reducerPort = reducerPort;
         this.reducerIp = reducerIp;
         this.port = port;
     }
 
     public static void main(String[] args) {
-        MapWorkerImpl mapWorker = new MapWorkerImpl(
+        final MapWorkerImpl mapWorker = new MapWorkerImpl(
                 Integer.parseInt(args[0]),
                 args[1],
                 Integer.parseInt(args[2]));
@@ -58,24 +68,24 @@ public class MapWorkerImpl implements MapWorker {
 
     private void run() {
         initialize();
-        if (objectOutputStreamToMoscow != null)
+        if (objectOutputStreamToReducer != null)
             try {
-                objectOutputStreamToMoscow.close();
+                objectOutputStreamToReducer.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        if (socketToMoscow != null)
+        if (socketToReducer != null)
             try {
-                socketToMoscow.close();
+                socketToReducer.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        LOGGER.info(String.format("MapWorker %d is exiting...", port));
+        LOGGER.info(String.format(MAP_WORKER_IS_EXITING_MESSAGE, port));
     }
 
     @Override
     public void initialize() {
-        System.out.printf("MapWorker is waiting for tasks at port %d... %n", port);
+        LOGGER.info(String.format(MAP_WORKER_IS_WAITING_MESSAGE, port));
         try {
             serverSocket = new ServerSocket(port);
             while (isNotFinished) {
@@ -113,7 +123,7 @@ public class MapWorkerImpl implements MapWorker {
         try {
             while (isNotFinished) {
                 incoming = objectInputStream.readObject();
-                LOGGER.info(String.format("%d received %s%n", port, incoming));
+                LOGGER.info(String.format(RECEIVED_MESSAGE, port, incoming));
                 if (incoming instanceof MapTask) {
                     final MapTask mapTask = (MapTask) incoming;
                     final List<Map<GeoPointPair, DirectionsResult>> map =
@@ -121,7 +131,7 @@ public class MapWorkerImpl implements MapWorker {
                     sendToReducers(map);
                     notifyMaster();
                 } else if (incoming instanceof String) {
-                    if (incoming.equals("exit")) {
+                    if (incoming.equals(ApplicationConstants.EXIT_SIGNAL)) {
                         isNotFinished = false;
                         objectInputStream.close();
                         objectOutputStream.close();
@@ -151,7 +161,7 @@ public class MapWorkerImpl implements MapWorker {
     }
 
     @Override
-    public List<Map<GeoPointPair, DirectionsResult>> map(GeoPoint obj1, GeoPoint obj2) {
+    public List<Map<GeoPointPair, DirectionsResult>> map(GeoPoint startGeoPoint, GeoPoint endGeoPoint) {
 //        final Mongo mongo = new Mongo("127.0.0.1", 27017);
 //        final DB db = mongo.getDB("local");
 //        final DBCollection dbCollection = db.getCollection("directions");
@@ -192,10 +202,10 @@ public class MapWorkerImpl implements MapWorker {
         final List<Map<GeoPointPair, DirectionsResult>> result = new ArrayList<>();
         resultsThatThisWorkerIsInChargeOf.forEach(x -> {
             final Map<GeoPointPair, DirectionsResult> map = new HashMap<>();
-            final boolean isStartLatitudeNearIssuedStartLatitude = Math.abs(obj1.getLatitude() - x.getStartPoint().getLatitude()) < 0.0001;
-            final boolean isStartLongitudeNearIssuedStartLongitude = Math.abs(obj1.getLongitude() - x.getStartPoint().getLongitude()) < 0.0001;
-            final boolean isEndLatitudeNearIssuedEndLatitude = Math.abs(obj2.getLatitude() - x.getEndPoint().getLatitude()) < 0.0001;
-            final boolean isEndLongitudeNearIssuedEndLongitude = Math.abs(obj2.getLongitude() - x.getEndPoint().getLongitude()) < 0.0001;
+            final boolean isStartLatitudeNearIssuedStartLatitude = Math.abs(startGeoPoint.getLatitude() - x.getStartPoint().getLatitude()) < 0.0001;
+            final boolean isStartLongitudeNearIssuedStartLongitude = Math.abs(startGeoPoint.getLongitude() - x.getStartPoint().getLongitude()) < 0.0001;
+            final boolean isEndLatitudeNearIssuedEndLatitude = Math.abs(endGeoPoint.getLatitude() - x.getEndPoint().getLatitude()) < 0.0001;
+            final boolean isEndLongitudeNearIssuedEndLongitude = Math.abs(endGeoPoint.getLongitude() - x.getEndPoint().getLongitude()) < 0.0001;
             if (isStartLatitudeNearIssuedStartLatitude &&
                     isStartLongitudeNearIssuedStartLongitude &&
                     isEndLatitudeNearIssuedEndLatitude &&
@@ -218,7 +228,7 @@ public class MapWorkerImpl implements MapWorker {
     @Override
     public void notifyMaster() {
         try {
-            objectOutputStream.writeObject("ack");
+            objectOutputStream.writeObject(ApplicationConstants.ACK_SIGNAL);
             objectOutputStream.flush();
         } catch (IOException e) {
             e.printStackTrace();
@@ -227,41 +237,37 @@ public class MapWorkerImpl implements MapWorker {
 
     @Override
     public long calculateHash(String string) {
-        byte[] bytesOfMessage = new byte[0];
-        try {
-            bytesOfMessage = string.getBytes("UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
+        byte[] bytesOfMessage;
+        bytesOfMessage = string.getBytes(StandardCharsets.UTF_8);
         MessageDigest md = null;
         try {
-            md = MessageDigest.getInstance("MD5");
+            md = MessageDigest.getInstance(MD_5_ALGORITHM);
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         }
-        byte[] thedigest = md != null ? md.digest(bytesOfMessage) : new byte[0];
-        final ByteBuffer bb = ByteBuffer.wrap(thedigest);
+        byte[] theDigest = md != null ? md.digest(bytesOfMessage) : new byte[0];
+        final ByteBuffer bb = ByteBuffer.wrap(theDigest);
         return bb.getLong();
     }
 
     @Override
     public void sendToReducers(List<Map<GeoPointPair, DirectionsResult>> map) {
-        LOGGER.info(String.format("%d is sending %s to reduce worker [ %s : %d ]... %n", port, map, reducerIp, reducerPort));
+        LOGGER.info(String.format(SENDING_TO_REDUCE_WORKER_MESSAGE, port, map, reducerIp, reducerPort));
         try {
-            socketToMoscow = new Socket(reducerIp, reducerPort);
-            objectOutputStreamToMoscow = new ObjectOutputStream(socketToMoscow.getOutputStream());
-            objectOutputStreamToMoscow.writeObject(map);
-            objectOutputStreamToMoscow.flush();
-            objectOutputStreamToMoscow.writeObject("exit");
-            objectOutputStreamToMoscow.flush();
+            socketToReducer = new Socket(reducerIp, reducerPort);
+            objectOutputStreamToReducer = new ObjectOutputStream(socketToReducer.getOutputStream());
+            objectOutputStreamToReducer.writeObject(map);
+            objectOutputStreamToReducer.flush();
+            objectOutputStreamToReducer.writeObject(ApplicationConstants.EXIT_SIGNAL);
+            objectOutputStreamToReducer.flush();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     private double roundTo2Decimals(double val) {
-        DecimalFormat decimalFormat = new DecimalFormat("###.##");
-        return Double.valueOf(decimalFormat.format(val));
+        final DecimalFormat decimalFormat = new DecimalFormat(DECIMAL_FORMAT_PATTERN);
+        return Double.parseDouble(decimalFormat.format(val));
     }
 
 }

@@ -15,7 +15,7 @@ import java.util.Map;
  */
 public interface MapWorker extends Worker {
 
-    List<Map<GeoPointPair, DirectionsResult>> map(GeoPoint obj1, GeoPoint obj2);
+    List<Map<GeoPointPair, DirectionsResult>> map(GeoPoint startGeoPoint, GeoPoint endGeoPoint);
 
     void notifyMaster();
 

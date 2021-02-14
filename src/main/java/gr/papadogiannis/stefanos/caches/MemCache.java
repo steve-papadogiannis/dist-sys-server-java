@@ -1,7 +1,7 @@
 package gr.papadogiannis.stefanos.caches;
 
-import com.google.maps.model.DirectionsResult;
 import gr.papadogiannis.stefanos.models.GeoPointPair;
+import com.google.maps.model.DirectionsResult;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
