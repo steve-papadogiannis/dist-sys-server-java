@@ -1,8 +1,5 @@
 package gr.papadogiannis.stefanos.mappers.impl;
 
-import com.mongodb.DB;
-import com.mongodb.DBCollection;
-import com.mongodb.Mongo;
 import gr.papadogiannis.stefanos.constants.ApplicationConstants;
 import gr.papadogiannis.stefanos.models.DirectionsResultWrapper;
 import gr.papadogiannis.stefanos.models.GeoPointPair;
@@ -10,9 +7,11 @@ import gr.papadogiannis.stefanos.mappers.MapWorker;
 import gr.papadogiannis.stefanos.models.GeoPoint;
 import gr.papadogiannis.stefanos.models.MapTask;
 import com.google.maps.model.DirectionsResult;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.mongojack.DBCursor;
 import org.mongojack.JacksonDBCollection;
+import com.mongodb.DBCollection;
+import org.mongojack.DBCursor;
+import com.mongodb.Mongo;
+import com.mongodb.DB;
 
 import java.security.NoSuchAlgorithmException;
 import java.nio.charset.StandardCharsets;
@@ -171,12 +170,12 @@ public class MapWorkerImpl implements MapWorker {
         final DB db = mongo.getDB("local");
         final DBCollection dbCollection = db.getCollection("directions");
         final JacksonDBCollection<DirectionsResultWrapper, String> coll = JacksonDBCollection.wrap(dbCollection,
-            DirectionsResultWrapper.class, String.class);
+                DirectionsResultWrapper.class, String.class);
         final DBCursor<DirectionsResultWrapper> cursor = coll.find();
         final List<DirectionsResultWrapper> list = new ArrayList<>();
 //        final ObjectMapper mapper = new ObjectMapper();
         while (cursor.hasNext()) {
-           list.add(cursor.next());
+            list.add(cursor.next());
         }
 //        String filename = port + "_directions";
 //        File file = new File(filename);

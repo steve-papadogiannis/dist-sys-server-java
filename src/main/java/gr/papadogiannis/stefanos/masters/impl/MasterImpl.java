@@ -14,20 +14,29 @@ import org.mongojack.JacksonDBCollection;
 import com.google.maps.DirectionsApi;
 import com.google.maps.GeoApiContext;
 import com.google.maps.model.LatLng;
+
 import java.io.ObjectOutputStream;
+
 import org.mongojack.WriteResult;
+
 import java.io.ObjectInputStream;
 import java.util.logging.Logger;
+
 import com.mongodb.DBCollection;
+
 import java.io.IOException;
+
 import com.mongodb.Mongo;
+
 import java.net.Socket;
+
 import com.mongodb.DB;
+
 import java.util.*;
 
 /**
  * @author Stefanos Papadogiannis
- *
+ * <p>
  * Created on 15/4/2017
  */
 public class MasterImpl implements Master {
@@ -40,7 +49,8 @@ public class MasterImpl implements Master {
             "Master: A worker had the directions issued";
     private static final String INVOCATION_OF_GOOGLE_API_MESSAGE = "Master: I invoke google API for directions!";
     private static final String SENDING_TO_MAP_WORKER_MESSAGE = "Sending %s to map worker %s...";
-    public static final String SOMETHING_WENT_WRONG_ON_ACKNOWLEDGEMENT_ERROR_MESSAGE = "Something went wrong on acknowledgement";
+    private static final String SOMETHING_WENT_WRONG_ON_ACKNOWLEDGEMENT_ERROR_MESSAGE =
+            "Something went wrong on acknowledgement";
     public static final String SENDING_ACK_TO_REDUCE_WORKER_MESSAGE = "Sending ack to reduce worker %s... %n";
 
     private final List<Node> reducerNodes = new ArrayList<>();
@@ -51,11 +61,11 @@ public class MasterImpl implements Master {
 
     public MasterImpl(String[] args) {
         int i = 1;
-        for ( ; i < args.length - 2; i += 2) {
-            final Node node = new MapperNode(Integer.parseInt(args[i+1]), args[i]);
+        for (; i < args.length - 2; i += 2) {
+            final Node node = new MapperNode(Integer.parseInt(args[i + 1]), args[i]);
             mapperNodes.add(node);
         }
-        final Node node = new ReducerNode(Integer.parseInt(args[i+1]), args[i]);
+        final Node node = new ReducerNode(Integer.parseInt(args[i + 1]), args[i]);
         reducerNodes.add(node);
     }
 
@@ -126,7 +136,7 @@ public class MasterImpl implements Master {
                         startLatitude, startLongitude,
                         endLatitude, endLongitude));
                 LOGGER.info(searchCache(new GeoPoint(startLatitude, startLongitude),
-                            new GeoPoint(endLatitude, endLongitude)).toString());
+                        new GeoPoint(endLatitude, endLongitude)).toString());
             }
         }
         tearDownApplication();
@@ -205,7 +215,7 @@ public class MasterImpl implements Master {
     @Override
     public void collectDataFromReducer() {
         Map<GeoPointPair, List<DirectionsResult>> result = null;
-        for ( Node node : reducerNodes) {
+        for (Node node : reducerNodes) {
             result = node.getResult();
         }
         ReduceWorkerImpl.clearMapToReturn();
@@ -223,11 +233,11 @@ public class MasterImpl implements Master {
             final GeoPoint endGeoPoint = new GeoPoint(endLatitude, endLongitude);
             for (Map.Entry<GeoPointPair, List<DirectionsResult>> entry : result.entrySet()) {
                 if (min == null ||
-                    min.getKey().getStartGeoPoint().euclideanDistance(startGeoPoint) +
-                    min.getKey().getEndGeoPoint().euclideanDistance(endGeoPoint) >
-                    entry.getKey().getStartGeoPoint().euclideanDistance(startGeoPoint) +
-                    entry.getKey().getEndGeoPoint().euclideanDistance(endGeoPoint)) {
-                        min = entry;
+                        min.getKey().getStartGeoPoint().euclideanDistance(startGeoPoint) +
+                                min.getKey().getEndGeoPoint().euclideanDistance(endGeoPoint) >
+                                entry.getKey().getStartGeoPoint().euclideanDistance(startGeoPoint) +
+                                        entry.getKey().getEndGeoPoint().euclideanDistance(endGeoPoint)) {
+                    min = entry;
                 }
             }
             final List<DirectionsResult> minDirectionsResultList = min != null ? min.getValue() : null;
@@ -267,7 +277,7 @@ public class MasterImpl implements Master {
         geoApiContext.setApiKey(ApplicationConstants.DIRECTIONS_API_KEY);
         DirectionsResult directionsResult = null;
         try {
-           directionsResult = DirectionsApi.newRequest(geoApiContext).origin(new LatLng(startGeoPoint.getLatitude(),
+            directionsResult = DirectionsApi.newRequest(geoApiContext).origin(new LatLng(startGeoPoint.getLatitude(),
                     startGeoPoint.getLongitude())).destination(new LatLng(endGeoPoint.getLatitude(),
                     endGeoPoint.getLongitude())).await();
         } catch (ApiException | InterruptedException | IOException e) {
@@ -400,7 +410,7 @@ public class MasterImpl implements Master {
             }
         }
 
-        Map<GeoPointPair,List<DirectionsResult>> getResult() {
+        Map<GeoPointPair, List<DirectionsResult>> getResult() {
             try {
                 return (Map<GeoPointPair, List<DirectionsResult>>) objectInputStream.readObject();
             } catch (IOException | ClassNotFoundException e) {

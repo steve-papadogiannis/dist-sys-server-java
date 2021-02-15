@@ -1,7 +1,5 @@
 package gr.papadogiannis.stefanos.models;
 
-import gr.papadogiannis.stefanos.models.GeoPoint;
-
 import java.io.Serializable;
 
 /**

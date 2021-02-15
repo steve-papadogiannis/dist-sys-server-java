@@ -1,14 +1,15 @@
 package gr.papadogiannis.stefanos.reducers.impl;
 
-import com.google.maps.model.DirectionsResult;
 import gr.papadogiannis.stefanos.constants.ApplicationConstants;
-import gr.papadogiannis.stefanos.models.GeoPointPair;
 import gr.papadogiannis.stefanos.reducers.ReduceWorker;
+import gr.papadogiannis.stefanos.models.GeoPointPair;
+import com.google.maps.model.DirectionsResult;
 
 import java.util.concurrent.CountDownLatch;
 import java.io.ObjectOutputStream;
 import java.io.ObjectInputStream;
 import java.net.SocketException;
+import java.util.logging.Logger;
 import java.net.ServerSocket;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -16,7 +17,6 @@ import java.util.HashMap;
 import java.net.Socket;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 
 /**
  * @author Stefanos Papadogiannis

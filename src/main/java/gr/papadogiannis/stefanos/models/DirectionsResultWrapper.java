@@ -2,12 +2,11 @@ package gr.papadogiannis.stefanos.models;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.maps.model.DirectionsResult;
-import gr.papadogiannis.stefanos.models.GeoPoint;
 import org.mongojack.ObjectId;
 
 /**
  * @author Stefanos Papadogiannis
- *
+ * <p>
  * Created on 15/4/2017
  */
 public final class DirectionsResultWrapper {
@@ -20,7 +19,8 @@ public final class DirectionsResultWrapper {
 
     private DirectionsResult directionsResult;
 
-    public DirectionsResultWrapper() { }
+    public DirectionsResultWrapper() {
+    }
 
     public DirectionsResultWrapper(GeoPoint startPoint, GeoPoint endPoint, DirectionsResult directionsResult) {
         this.startPoint = startPoint;

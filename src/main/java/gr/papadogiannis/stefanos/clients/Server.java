@@ -17,7 +17,7 @@ import java.util.List;
 
 /**
  * @author Stefanos Papadogiannis
- *
+ * <p>
  * Created on 22/4/2017
  */
 public final class Server {
