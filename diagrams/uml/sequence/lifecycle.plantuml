@@ -1,6 +1,7 @@
 @startuml
 participant "Client Application" as Client
 actor User
+box Service
 boundary Server
 control ServerRunnable
 control Master
@@ -10,6 +11,7 @@ control MapWorker
 control ReduceWorker
 control ReduceWorkerRunnable
 collections MemCache
+end box
 database Mongo
 boundary "Google Geolocation API" as GGA
 autonumber "<b>[000]"
@@ -67,13 +69,15 @@ ServerRunnable -> Master : Query for Directions
 
 Master -> MemCache : Query for Directions
 
-alt Hit
+alt Cache Hit
 
-MemCache -> Master : Returns Result
+MemCache --> Master : Returns Result
 
-else Miss
+else Cache Miss
 
-Master -> MapWorker : Distribute Query to MapWorker
+Master -> MapNode : Distributes Query to MapWorkers
+
+MapNode -> MapWorker : Distribute Query to MapWorkers
 
 Master -> Master : Waits for MapWorkers
 
@@ -87,17 +91,17 @@ ReduceWorkerRunnable -> ReduceWorkerRunnable : Reduces Result
 MapWorker -> ReduceWorkerRunnable : Sends Exit Signal
 deactivate ReduceWorkerRunnable
 
-MapWorker -> Master : Sends Acknowledgement
+MapWorker --> Master : Sends Acknowledgement
 
 Master -> ReduceWorkerRunnable : Sends Acknowledgement
 
-alt Hit
+alt Map-Reduce Hit
 
-ReduceWorkerRunnable -> Master : Returns Reduced Result
+ReduceWorkerRunnable --> Master : Returns Reduced Result
 
 Master -> Master : Calculates Euclidean Minimum
 
-else Miss
+else Map-Reduce Miss
 
 Master -> GGA : Queries For Directions
 
@@ -111,9 +115,9 @@ end
 
 end
 
-Master -> ServerRunnable : Sends Result
+Master --> ServerRunnable : Sends Result
 
-ServerRunnable -> Client : Sends Result
+ServerRunnable --> Client : Sends Result
 
 else Exit Signal
 
