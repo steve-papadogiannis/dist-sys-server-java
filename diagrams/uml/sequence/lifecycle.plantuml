@@ -129,9 +129,29 @@ deactivate ServerRunnable
 else Terminate Signal
 
 Client -> ServerRunnable : Sends Terminate Signal
-deactivate ServerRunnable
 
+ServerRunnable -> Master : Terminates Master
+
+Master -> MapNode : Terminates MapNode
+
+Master -> ReduceNode : Terminates ReduceNode
+
+MapNode -> MapWorker : Sends Exit Signal
+deactivate MapWorker
+
+ReduceNode -> ReduceWorkerRunnable : Sends Terminate Signal
+
+ReduceWorkerRunnable -> ReduceWorker : Closes Server Socket
+
+deactivate ReduceWorkerRunnable
+deactivate ReduceWorker
+
+deactivate ReduceNode
+deactivate MapNode
+deactivate MemCache
 deactivate Master
+
+deactivate ServerRunnable
 
 deactivate Server
 

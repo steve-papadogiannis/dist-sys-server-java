@@ -112,12 +112,12 @@ public final class Server {
                 while (isNotFinished) {
                     incomingObject = objectInputStreamFromAndroid.readObject();
 
-                    if (incomingObject.equals(ApplicationConstants.EXIT_SIGNAL)) {
+                    if (ApplicationConstants.EXIT_SIGNAL.equals(incomingObject)) {
                         isNotFinished = false;
                         objectInputStreamFromAndroid.close();
                         objectOutputStreamToAndroid.close();
                         socket.close();
-                    } else if (incomingObject.equals(ApplicationConstants.TERMINATE_SIGNAL)) {
+                    } else if (ApplicationConstants.TERMINATE_SIGNAL.equals(incomingObject)) {
                         server.falsifyIsNotFinishedFlag();
                         isNotFinished = false;
                         objectInputStreamFromAndroid.close();
