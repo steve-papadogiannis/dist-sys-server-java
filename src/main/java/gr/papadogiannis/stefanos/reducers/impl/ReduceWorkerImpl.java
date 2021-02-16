@@ -40,7 +40,7 @@ public final class ReduceWorkerImpl implements ReduceWorker {
     private ServerSocket serverSocket;
     private final int port;
 
-    private ReduceWorkerImpl(int port) {
+    public ReduceWorkerImpl(int port) {
         LOGGER.info(REDUCE_WORKER_WAS_CREATED_MESSAGE);
         this.port = port;
     }
@@ -109,7 +109,7 @@ public final class ReduceWorkerImpl implements ReduceWorker {
         mapToReturn.clear();
     }
 
-    private void run() {
+    public void run() {
         initialize();
         LOGGER.info(String.format(REDUCE_WORKER_IS_EXITING_MESSAGE, port));
     }

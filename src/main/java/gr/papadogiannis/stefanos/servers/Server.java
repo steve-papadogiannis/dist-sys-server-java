@@ -34,7 +34,7 @@ public final class Server {
     private final MasterImpl master;
     private final int port;
 
-    private Server(MasterImpl master, int port) {
+    public Server(MasterImpl master, int port) {
         LOGGER.info(ANDROID_CLIENT_CREATION_MESSAGE);
         this.master = master;
         this.port = port;
@@ -51,7 +51,7 @@ public final class Server {
         this.isNotFinished = false;
     }
 
-    private void run() {
+    public void run() {
         LOGGER.info(String.format(ANDROID_CLIENT_IS_WAITING_MESSAGE, port));
         try {
             serverSocket = new ServerSocket(port);

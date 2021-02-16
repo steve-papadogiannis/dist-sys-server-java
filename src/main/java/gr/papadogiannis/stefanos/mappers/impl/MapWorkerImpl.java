@@ -57,7 +57,7 @@ public class MapWorkerImpl implements MapWorker {
     private Socket socketToReducer;
     private Socket socket;
 
-    private MapWorkerImpl(int port, String reducerIp, int reducerPort) {
+    public MapWorkerImpl(int port, String reducerIp, int reducerPort) {
         LOGGER.info(MAP_WORKER_WAS_CREATED_MESSAGE);
         this.reducerPort = reducerPort;
         this.reducerIp = reducerIp;
@@ -72,7 +72,7 @@ public class MapWorkerImpl implements MapWorker {
         mapWorker.run();
     }
 
-    private void run() {
+    public void run() {
         initialize();
         if (objectOutputStreamToReducer != null)
             try {
