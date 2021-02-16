@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>gr.papadogiannis.stefanos</groupId>
-    <artifactId>dist-sys</artifactId>
+    <artifactId>dist-sys-server-java</artifactId>
     <version>1.0.0</version>
 
     <properties>
