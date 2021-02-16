@@ -1,5 +1,9 @@
 package gr.papadogiannis.stefanos.masters.impl;
 
+import com.mongodb.ConnectionString;
+import com.mongodb.MongoClientSettings;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
 import gr.papadogiannis.stefanos.constants.ApplicationConstants;
 import gr.papadogiannis.stefanos.models.DirectionsResultWrapper;
 import gr.papadogiannis.stefanos.reducers.impl.ReduceWorkerImpl;
@@ -10,27 +14,24 @@ import gr.papadogiannis.stefanos.masters.Master;
 import gr.papadogiannis.stefanos.models.MapTask;
 import com.google.maps.model.DirectionsResult;
 import com.google.maps.errors.ApiException;
-import org.mongojack.JacksonDBCollection;
 import com.google.maps.DirectionsApi;
 import com.google.maps.GeoApiContext;
 import com.google.maps.model.LatLng;
+import org.bson.UuidRepresentation;
+import org.mongojack.JacksonMongoCollection;
 
 import java.io.ObjectOutputStream;
 
-import org.mongojack.WriteResult;
 
 import java.io.ObjectInputStream;
 import java.util.logging.Logger;
 
-import com.mongodb.DBCollection;
 
 import java.io.IOException;
 
-import com.mongodb.Mongo;
 
 import java.net.Socket;
 
-import com.mongodb.DB;
 
 import java.util.*;
 
@@ -293,12 +294,16 @@ public class MasterImpl implements Master {
 
     @Override
     public void updateDatabase(GeoPoint startGeoPoint, GeoPoint endGeoPoint, DirectionsResult directions) {
-        final Mongo mongo = new Mongo("127.0.0.1", 27017);
-        final DB db = mongo.getDB("local");
-        final DBCollection dbCollection = db.getCollection("directions");
-        final JacksonDBCollection<DirectionsResultWrapper, String> coll = JacksonDBCollection.wrap(dbCollection,
-                DirectionsResultWrapper.class, String.class);
-        final WriteResult<DirectionsResultWrapper, String> resultWrappers = coll.insert(new DirectionsResultWrapper(startGeoPoint,
+        final MongoClientSettings mongoClientSettings = MongoClientSettings
+                .builder()
+                .applyConnectionString(
+                        new ConnectionString(
+                                "mongodb://root:example@localhost:27017"
+                        )).build();
+        final MongoClient mongoClient = MongoClients.create(mongoClientSettings);
+        final JacksonMongoCollection<DirectionsResultWrapper> collection = JacksonMongoCollection.builder()
+                .build(mongoClient, "dist-sys", "directions", DirectionsResultWrapper.class, UuidRepresentation.STANDARD);
+        collection.insert(new DirectionsResultWrapper(startGeoPoint,
                 endGeoPoint, directions));
     }
 

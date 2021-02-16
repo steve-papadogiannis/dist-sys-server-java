@@ -1,4 +1,4 @@
-package gr.papadogiannis.stefanos.clients;
+package gr.papadogiannis.stefanos.servers;
 
 import gr.papadogiannis.stefanos.constants.ApplicationConstants;
 import gr.papadogiannis.stefanos.masters.impl.MasterImpl;

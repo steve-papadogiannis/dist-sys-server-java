@@ -1,5 +1,9 @@
 package gr.papadogiannis.stefanos.mappers.impl;
 
+import com.mongodb.*;
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
 import gr.papadogiannis.stefanos.constants.ApplicationConstants;
 import gr.papadogiannis.stefanos.models.DirectionsResultWrapper;
 import gr.papadogiannis.stefanos.models.GeoPointPair;
@@ -7,11 +11,8 @@ import gr.papadogiannis.stefanos.mappers.MapWorker;
 import gr.papadogiannis.stefanos.models.GeoPoint;
 import gr.papadogiannis.stefanos.models.MapTask;
 import com.google.maps.model.DirectionsResult;
-import org.mongojack.JacksonDBCollection;
-import com.mongodb.DBCollection;
-import org.mongojack.DBCursor;
-import com.mongodb.Mongo;
-import com.mongodb.DB;
+import org.bson.UuidRepresentation;
+import org.mongojack.JacksonMongoCollection;
 
 import java.security.NoSuchAlgorithmException;
 import java.nio.charset.StandardCharsets;
@@ -166,16 +167,20 @@ public class MapWorkerImpl implements MapWorker {
 
     @Override
     public List<Map<GeoPointPair, DirectionsResult>> map(GeoPoint startGeoPoint, GeoPoint endGeoPoint) {
-        final Mongo mongo = new Mongo("127.0.0.1", 27017);
-        final DB db = mongo.getDB("local");
-        final DBCollection dbCollection = db.getCollection("directions");
-        final JacksonDBCollection<DirectionsResultWrapper, String> coll = JacksonDBCollection.wrap(dbCollection,
-                DirectionsResultWrapper.class, String.class);
-        final DBCursor<DirectionsResultWrapper> cursor = coll.find();
+        final MongoClientSettings mongoClientSettings = MongoClientSettings
+                .builder()
+                .applyConnectionString(
+                        new ConnectionString(
+                                "mongodb://root:example@localhost:27017"
+                        )).build();
+        final MongoClient mongoClient = MongoClients.create(mongoClientSettings);
+        final JacksonMongoCollection<DirectionsResultWrapper> collection = JacksonMongoCollection.builder()
+                .build(mongoClient, "dist-sys", "directions", DirectionsResultWrapper.class, UuidRepresentation.STANDARD);
+        final FindIterable<DirectionsResultWrapper> cursor = collection.find();
         final List<DirectionsResultWrapper> list = new ArrayList<>();
 //        final ObjectMapper mapper = new ObjectMapper();
-        while (cursor.hasNext()) {
-            list.add(cursor.next());
+        while (cursor.cursor().hasNext()) {
+            list.add(cursor.cursor().next());
         }
 //        String filename = port + "_directions";
 //        File file = new File(filename);
