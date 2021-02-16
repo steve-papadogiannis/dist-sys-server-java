@@ -101,8 +101,8 @@ public final class Server {
                 objectInputStreamFromAndroid = new ObjectInputStream(socket.getInputStream());
                 objectOutputStreamToAndroid = new ObjectOutputStream(socket.getOutputStream());
                 waitForTasksThread();
-            } catch (IOException e) {
-                e.printStackTrace();
+            } catch (IOException ioException) {
+                LOGGER.severe(ioException.toString());
             }
         }
 

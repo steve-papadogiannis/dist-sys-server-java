@@ -198,8 +198,8 @@ public class MapWorkerImpl implements MapWorker {
 //                    list.add(mapper.readValue(line, DirectionsResultWrapper.class));
 //                }
 //                in.close();
-//            } catch (IOException e) {
-//                e.printStackTrace();
+//            } catch (IOException ioException) {
+//                LOGGER.severe(ioException.toString());
 //            }
 //        }
         final long ipPortHash = calculateHash("127.0.0.1" + socket.getLocalPort());
