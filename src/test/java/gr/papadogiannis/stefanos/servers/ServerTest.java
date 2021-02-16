@@ -1,5 +1,6 @@
 package gr.papadogiannis.stefanos.servers;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.*;
@@ -8,6 +9,7 @@ import java.net.Socket;
 public class ServerTest {
 
     @Test
+    @Ignore
     public void sendDirections() throws IOException, ClassNotFoundException {
         final Socket socket = new Socket("localhost", 8083);
         final ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
@@ -17,5 +19,4 @@ public class ServerTest {
         final Object o = objectInputStream.readObject();
         System.out.println(o);
     }
-
 }
