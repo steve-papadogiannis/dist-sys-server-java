@@ -52,7 +52,9 @@ public class MasterImpl implements Master {
     private static final String SENDING_TO_MAP_WORKER_MESSAGE = "Sending %s to map worker %s...";
     private static final String SOMETHING_WENT_WRONG_ON_ACKNOWLEDGEMENT_ERROR_MESSAGE =
             "Something went wrong on acknowledgement";
-    public static final String SENDING_ACK_TO_REDUCE_WORKER_MESSAGE = "Sending ack to reduce worker %s... %n";
+    private static final String SENDING_ACK_TO_REDUCE_WORKER_MESSAGE = "Sending ack to reduce worker %s... %n";
+    private static final String APPLICATION_PROPERTIES_FILE_NAME = "application.properties";
+    private static final String API_KEY_PROPERTY_KEY = "api.key";
 
     private final List<Node> reducerNodes = new ArrayList<>();
     private final List<Node> mapperNodes = new ArrayList<>();
@@ -274,17 +276,28 @@ public class MasterImpl implements Master {
 
     @Override
     public DirectionsResult askGoogleDirectionsAPI(GeoPoint startGeoPoint, GeoPoint endGeoPoint) {
-        GeoApiContext geoApiContext = new GeoApiContext();
-        geoApiContext.setApiKey(ApplicationConstants.DIRECTIONS_API_KEY);
+        final GeoApiContext geoApiContext = new GeoApiContext();
+        geoApiContext.setApiKey(getApiKey());
         DirectionsResult directionsResult = null;
         try {
             directionsResult = DirectionsApi.newRequest(geoApiContext).origin(new LatLng(startGeoPoint.getLatitude(),
                     startGeoPoint.getLongitude())).destination(new LatLng(endGeoPoint.getLatitude(),
                     endGeoPoint.getLongitude())).await();
-        } catch (ApiException | InterruptedException | IOException e) {
-            e.printStackTrace();
+        } catch (ApiException | InterruptedException | IOException exception) {
+            LOGGER.severe(exception.toString());
         }
         return directionsResult;
+    }
+
+    private String getApiKey() {
+        try {
+            final Properties props = new Properties();
+            props.load(MasterImpl.class.getClassLoader().getResourceAsStream(APPLICATION_PROPERTIES_FILE_NAME));
+            return props.getProperty(API_KEY_PROPERTY_KEY);
+        } catch (IOException ioException) {
+            LOGGER.severe(ioException.toString());
+            return "";
+        }
     }
 
     @Override
@@ -354,8 +367,8 @@ public class MasterImpl implements Master {
                 socket = new Socket(ip, port);
                 objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
                 objectInputStream = new ObjectInputStream(socket.getInputStream());
-            } catch (IOException e) {
-                e.printStackTrace();
+            } catch (IOException ioException) {
+                LOGGER.severe(ioException.toString());
             }
         }
 
@@ -365,8 +378,8 @@ public class MasterImpl implements Master {
                 objectOutputStream.flush();
                 if (objectOutputStream != null)
                     objectOutputStream.close();
-            } catch (IOException e) {
-                e.printStackTrace();
+            } catch (IOException ioException) {
+                LOGGER.severe(ioException.toString());
             }
         }
 
@@ -374,8 +387,8 @@ public class MasterImpl implements Master {
             try {
                 if (objectInputStream != null)
                     objectInputStream.close();
-            } catch (IOException e) {
-                e.printStackTrace();
+            } catch (IOException ioException) {
+                LOGGER.severe(ioException.toString());
             }
         }
 
@@ -383,8 +396,8 @@ public class MasterImpl implements Master {
             try {
                 if (socket != null)
                     socket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
+            } catch (IOException ioException) {
+                LOGGER.severe(ioException.toString());
             }
         }
 
@@ -392,16 +405,16 @@ public class MasterImpl implements Master {
             try {
                 objectOutputStream.writeObject(mapTask);
                 objectOutputStream.flush();
-            } catch (IOException e) {
-                e.printStackTrace();
+            } catch (IOException ioException) {
+                LOGGER.severe(ioException.toString());
             }
         }
 
         String getAcknowledgement() {
             try {
                 return (String) objectInputStream.readObject();
-            } catch (IOException | ClassNotFoundException e) {
-                e.printStackTrace();
+            } catch (IOException | ClassNotFoundException exception) {
+                LOGGER.severe(exception.toString());
                 return null;
             }
         }
@@ -410,16 +423,16 @@ public class MasterImpl implements Master {
             try {
                 objectOutputStream.writeObject(ApplicationConstants.ACK_SIGNAL);
                 objectOutputStream.flush();
-            } catch (IOException e) {
-                e.printStackTrace();
+            } catch (IOException ioException) {
+                LOGGER.severe(ioException.toString());
             }
         }
 
         Map<GeoPointPair, List<DirectionsResult>> getResult() {
             try {
                 return (Map<GeoPointPair, List<DirectionsResult>>) objectInputStream.readObject();
-            } catch (IOException | ClassNotFoundException e) {
-                e.printStackTrace();
+            } catch (IOException | ClassNotFoundException exception) {
+                LOGGER.severe(exception.toString());
                 return null;
             }
         }
@@ -444,8 +457,8 @@ public class MasterImpl implements Master {
             try {
                 getObjectOutputStream().writeObject(ApplicationConstants.TERMINATE_SIGNAL);
                 getObjectOutputStream().flush();
-            } catch (IOException e) {
-                e.printStackTrace();
+            } catch (IOException ioException) {
+                LOGGER.severe(ioException.toString());
             }
         }
 

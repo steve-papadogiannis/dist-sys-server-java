@@ -7,7 +7,6 @@ package gr.papadogiannis.stefanos.constants;
  */
 public class ApplicationConstants {
 
-    public static final String DIRECTIONS_API_KEY = "private value";
     public static final String TERMINATE_SIGNAL = "terminate";
     public static final String EXIT_SIGNAL = "exit";
     public static final String ACK_SIGNAL = "ack";

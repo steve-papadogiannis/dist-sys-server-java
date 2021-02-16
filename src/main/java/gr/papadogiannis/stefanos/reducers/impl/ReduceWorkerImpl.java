@@ -35,6 +35,7 @@ public final class ReduceWorkerImpl implements ReduceWorker {
     private static final String REDUCE_WORKER_WAS_CREATED_MESSAGE = "ReduceWorker was created.";
 
     private static final Map<GeoPointPair, List<DirectionsResult>> mapToReturn = new HashMap<>();
+    private CountDownLatch countDownLatch = new CountDownLatch(4);
     private boolean isNotFinished = true;
     private ServerSocket serverSocket;
     private final int port;
@@ -51,17 +52,22 @@ public final class ReduceWorkerImpl implements ReduceWorker {
 
     @Override
     public void waitForMasterAck() {
+    }
 
+    public CountDownLatch getCountDownLatch() {
+        return countDownLatch;
+    }
+
+    public void setCountDownLatch(CountDownLatch countDownLatch) {
+        this.countDownLatch = countDownLatch;
     }
 
     @Override
     public void reduce(List<Map<GeoPointPair, DirectionsResult>> incoming) {
-
     }
 
     @Override
     public void sendResults(Map<GeoPointPair, List<DirectionsResult>> map) {
-
     }
 
     private void falsifyIsNotFinishedFlag() {
@@ -97,7 +103,6 @@ public final class ReduceWorkerImpl implements ReduceWorker {
 
     @Override
     public void waitForTasksThread() {
-
     }
 
     public static void clearMapToReturn() {
@@ -114,7 +119,6 @@ public final class ReduceWorkerImpl implements ReduceWorker {
         private static final String SENDING_RESULT_TO_MASTER_MESSAGE = "Sending result %s to master from %d...";
         private static final String RECEIVED_MESSAGE = "%d received %s";
 
-        private CountDownLatch countDownLatch = new CountDownLatch(4);
         private ObjectOutputStream objectOutputStream;
         private ObjectInputStream objectInputStream;
         private final ReduceWorkerImpl reduceWorker;
@@ -146,12 +150,13 @@ public final class ReduceWorkerImpl implements ReduceWorker {
                     incomingObject = objectInputStream.readObject();
                     if (incomingObject instanceof String) {
                         final String inputLine = (String) incomingObject;
-                        LOGGER.info(String.format(RECEIVED_MESSAGE, serverSocket.getLocalPort(), inputLine));
+                        LOGGER.info(String.format(RECEIVED_MESSAGE, socket.getPort(), inputLine));
+                        final CountDownLatch countDownLatch = reduceWorker.getCountDownLatch();
                         switch (inputLine) {
                             case ApplicationConstants.ACK_SIGNAL:
                                 countDownLatch.await();
                                 sendResults();
-                                countDownLatch = new CountDownLatch(4);
+                                reduceWorker.setCountDownLatch(new CountDownLatch(4));
                                 break;
                             case ApplicationConstants.EXIT_SIGNAL:
                                 countDownLatch.countDown();
@@ -174,7 +179,7 @@ public final class ReduceWorkerImpl implements ReduceWorker {
                         final List<Map<GeoPointPair, DirectionsResult>> incoming
                                 = (List<Map<GeoPointPair, DirectionsResult>>) incomingObject;
                         reduce(incoming);
-                        LOGGER.info(String.format(RECEIVED_MESSAGE, serverSocket.getLocalPort(), incoming));
+                        LOGGER.info(String.format(RECEIVED_MESSAGE, socket.getPort(), incoming));
                     }
                 }
             } catch (IOException | ClassNotFoundException | InterruptedException exception) {
@@ -195,7 +200,7 @@ public final class ReduceWorkerImpl implements ReduceWorker {
         }
 
         void sendResults() {
-            LOGGER.info(String.format(SENDING_RESULT_TO_MASTER_MESSAGE, mapToReturn, serverSocket.getLocalPort()));
+            LOGGER.info(String.format(SENDING_RESULT_TO_MASTER_MESSAGE, mapToReturn, socket.getPort()));
             try {
                 objectOutputStream.writeObject(mapToReturn);
                 objectOutputStream.flush();
