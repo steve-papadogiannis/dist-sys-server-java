@@ -1,9 +1,5 @@
 package gr.papadogiannis.stefanos.mappers.impl;
 
-import com.mongodb.*;
-import com.mongodb.client.FindIterable;
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoClients;
 import gr.papadogiannis.stefanos.constants.ApplicationConstants;
 import gr.papadogiannis.stefanos.models.DirectionsResultWrapper;
 import gr.papadogiannis.stefanos.models.GeoPointPair;
@@ -11,8 +7,13 @@ import gr.papadogiannis.stefanos.mappers.MapWorker;
 import gr.papadogiannis.stefanos.models.GeoPoint;
 import gr.papadogiannis.stefanos.models.MapTask;
 import com.google.maps.model.DirectionsResult;
-import org.bson.UuidRepresentation;
 import org.mongojack.JacksonMongoCollection;
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoClients;
+import com.mongodb.client.MongoCursor;
+import com.mongodb.client.MongoClient;
+import org.bson.UuidRepresentation;
+import com.mongodb.*;
 
 import java.security.NoSuchAlgorithmException;
 import java.nio.charset.StandardCharsets;
@@ -76,14 +77,14 @@ public class MapWorkerImpl implements MapWorker {
         if (objectOutputStreamToReducer != null)
             try {
                 objectOutputStreamToReducer.close();
-            } catch (IOException e) {
-                e.printStackTrace();
+            } catch (IOException ioException) {
+                LOGGER.severe(ioException.toString());
             }
         if (socketToReducer != null)
             try {
                 socketToReducer.close();
-            } catch (IOException e) {
-                e.printStackTrace();
+            } catch (IOException ioException) {
+                LOGGER.severe(ioException.toString());
             }
         LOGGER.info(String.format(MAP_WORKER_IS_EXITING_MESSAGE, port));
     }
@@ -169,19 +170,23 @@ public class MapWorkerImpl implements MapWorker {
     public List<Map<GeoPointPair, DirectionsResult>> map(GeoPoint startGeoPoint, GeoPoint endGeoPoint) {
         final MongoClientSettings mongoClientSettings = MongoClientSettings
                 .builder()
-                .applyConnectionString(
-                        new ConnectionString(
-                                "mongodb://root:example@localhost:27017"
-                        )).build();
+                .applyConnectionString(new ConnectionString("mongodb://root:example@localhost:27017"))
+                .build();
         final MongoClient mongoClient = MongoClients.create(mongoClientSettings);
-        final JacksonMongoCollection<DirectionsResultWrapper> collection = JacksonMongoCollection.builder()
-                .build(mongoClient, "dist-sys", "directions", DirectionsResultWrapper.class, UuidRepresentation.STANDARD);
-        final FindIterable<DirectionsResultWrapper> cursor = collection.find();
+        final JacksonMongoCollection<DirectionsResultWrapper> collection = JacksonMongoCollection
+                .builder()
+                .build(mongoClient,
+                        "dist-sys",
+                        "directions",
+                        DirectionsResultWrapper.class,
+                        UuidRepresentation.STANDARD);
+        final FindIterable<DirectionsResultWrapper> findIterable = collection.find();
         final List<DirectionsResultWrapper> list = new ArrayList<>();
-//        final ObjectMapper mapper = new ObjectMapper();
-        while (cursor.cursor().hasNext()) {
-            list.add(cursor.cursor().next());
+        final MongoCursor<DirectionsResultWrapper> mongoCursor = findIterable.cursor();
+        while (mongoCursor.hasNext()) {
+            list.add(mongoCursor.next());
         }
+//        final ObjectMapper mapper = new ObjectMapper();
 //        String filename = port + "_directions";
 //        File file = new File(filename);
 //        if (file.exists() && !file.isDirectory()) {
@@ -229,8 +234,7 @@ public class MapWorkerImpl implements MapWorker {
                                 roundTo2Decimals(x.getStartPoint().getLongitude())),
                         new GeoPoint(
                                 roundTo2Decimals(x.getEndPoint().getLatitude()),
-                                roundTo2Decimals(x.getEndPoint().getLongitude())
-                        ));
+                                roundTo2Decimals(x.getEndPoint().getLongitude())));
                 map.put(geoPointPair, x.getDirectionsResult());
                 result.add(map);
             }
