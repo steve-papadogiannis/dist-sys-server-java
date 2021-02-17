@@ -53,16 +53,15 @@ public class MasterImpl implements Master {
     private static final String SOMETHING_WENT_WRONG_ON_ACKNOWLEDGEMENT_ERROR_MESSAGE =
             "Something went wrong on acknowledgement";
     private static final String SENDING_ACK_TO_REDUCE_WORKER_MESSAGE = "Sending ack to reduce worker %s... %n";
-    private static final String APPLICATION_PROPERTIES_FILE_NAME = "application.properties";
-    private static final String API_KEY_PROPERTY_KEY = "api.key";
 
     private final List<Node> reducerNodes = new ArrayList<>();
     private final List<Node> mapperNodes = new ArrayList<>();
     private final Scanner input = new Scanner(System.in);
     private DirectionsResult resultOfMapReduce = null;
     private final MemCache memCache = new MemCache();
+    private final String apiKey;
 
-    public MasterImpl(String[] args) {
+    public MasterImpl(String[] args, String apiKey) {
         int i = 1;
         for (; i < args.length - 2; i += 2) {
             final Node node = new MapperNode(Integer.parseInt(args[i + 1]), args[i]);
@@ -70,6 +69,7 @@ public class MasterImpl implements Master {
         }
         final Node node = new ReducerNode(Integer.parseInt(args[i + 1]), args[i]);
         reducerNodes.add(node);
+        this.apiKey = apiKey;
     }
 
     public double getStartLatitude() {
@@ -277,7 +277,7 @@ public class MasterImpl implements Master {
     @Override
     public DirectionsResult askGoogleDirectionsAPI(GeoPoint startGeoPoint, GeoPoint endGeoPoint) {
         final GeoApiContext geoApiContext = new GeoApiContext();
-        geoApiContext.setApiKey(getApiKey());
+        geoApiContext.setApiKey(this.apiKey);
         DirectionsResult directionsResult = null;
         try {
             directionsResult = DirectionsApi.newRequest(geoApiContext).origin(new LatLng(startGeoPoint.getLatitude(),
@@ -287,17 +287,6 @@ public class MasterImpl implements Master {
             LOGGER.severe(exception.toString());
         }
         return directionsResult;
-    }
-
-    private String getApiKey() {
-        try {
-            final Properties props = new Properties();
-            props.load(MasterImpl.class.getClassLoader().getResourceAsStream(APPLICATION_PROPERTIES_FILE_NAME));
-            return props.getProperty(API_KEY_PROPERTY_KEY);
-        } catch (IOException ioException) {
-            LOGGER.severe(ioException.toString());
-            return "";
-        }
     }
 
     @Override

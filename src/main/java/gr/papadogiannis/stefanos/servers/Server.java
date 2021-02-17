@@ -7,6 +7,7 @@ import com.google.maps.model.*;
 
 import java.io.ObjectOutputStream;
 import java.io.ObjectInputStream;
+import java.util.Properties;
 import java.util.logging.Logger;
 import java.net.SocketException;
 import java.net.ServerSocket;
@@ -26,8 +27,10 @@ public final class Server {
 
     private static final String ANDROID_CLIENT_IS_WAITING_MESSAGE = "Client is waiting for tasks at port %d...";
     private static final String SERVER_SOCKET_WAS_CLOSED_ERROR_MESSAGE = "Server socket on client was closed.";
+    private static final String APPLICATION_PROPERTIES_FILE_NAME = "application.properties";
     private static final String ANDROID_CLIENT_IS_EXITING_MESSAGE = "Client is exiting...";
     private static final String ANDROID_CLIENT_CREATION_MESSAGE = "Client was created.";
+    private static final String API_KEY_PROPERTY_KEY = "api.key";
 
     private boolean isNotFinished = true;
     private ServerSocket serverSocket;
@@ -40,8 +43,19 @@ public final class Server {
         this.port = port;
     }
 
+    private static String getApiKey() {
+        try {
+            final Properties props = new Properties();
+            props.load(Server.class.getClassLoader().getResourceAsStream(APPLICATION_PROPERTIES_FILE_NAME));
+            return props.getProperty(API_KEY_PROPERTY_KEY);
+        } catch (IOException ioException) {
+            LOGGER.severe(ioException.toString());
+            return "";
+        }
+    }
+
     public static void main(String[] args) {
-        final MasterImpl master = new MasterImpl(args);
+        final MasterImpl master = new MasterImpl(args, getApiKey());
         master.initialize();
         final Server server = new Server(master, Integer.parseInt(args[0]));
         server.run();

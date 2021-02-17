@@ -1,17 +1,24 @@
 package gr.papadogiannis.stefanos.servers;
 
+import gr.papadogiannis.stefanos.reducers.impl.ReduceWorkerImpl;
 import gr.papadogiannis.stefanos.mappers.impl.MapWorkerImpl;
 import gr.papadogiannis.stefanos.masters.impl.MasterImpl;
-import gr.papadogiannis.stefanos.reducers.impl.ReduceWorkerImpl;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.io.*;
-import java.net.Socket;
+import java.util.logging.Logger;
+import java.util.Properties;
 import java.util.ArrayList;
+import java.net.Socket;
 import java.util.List;
+import java.io.*;
 
 public class ServerTest {
+
+    private static final Logger LOGGER = Logger.getLogger(ServerTest.class.getName());
+
+    private static final String APPLICATION_PROPERTIES_FILE_NAME = "application-test.properties";
+    private static final String API_KEY_PROPERTY_KEY = "test.api.key";
 
     @Test
     @Ignore
@@ -53,7 +60,7 @@ public class ServerTest {
                 "5559"
         };
         Runnable serverRunnable = () -> {
-            final MasterImpl master = new MasterImpl(args);
+            final MasterImpl master = new MasterImpl(args, getApiKey());
             master.initialize();
             final Server server = new Server(master, 8080);
             server.run();
@@ -68,6 +75,17 @@ public class ServerTest {
         final ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
         final Object o = objectInputStream.readObject();
         System.out.println(o);
+    }
+
+    private String getApiKey() {
+        try {
+            final Properties props = new Properties();
+            props.load(ServerTest.class.getClassLoader().getResourceAsStream(APPLICATION_PROPERTIES_FILE_NAME));
+            return props.getProperty(API_KEY_PROPERTY_KEY);
+        } catch (IOException ioException) {
+            LOGGER.severe(ioException.toString());
+            return "";
+        }
     }
 
 }
