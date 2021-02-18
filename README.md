@@ -1,5 +1,6 @@
 # Directions Map Reduce Server # 
 [![Build Status](https://travis-ci.com/steve-papadogiannis/dist-sys-server-java.svg?branch=master)](https://travis-ci.com/steve-papadogiannis/dist-sys-server-java)
+[![Known Vulnerabilities](https://snyk.io/test/github/steve-papadogiannis/dist-sys-server-java/badge.svg?targetFile=pom.xml)](https://snyk.io/test/github/steve-papadogiannis/dist-sys-server-java?targetFile=pom.xml)
 
 A small project that takes directions queries and produces directions results in polynomial representation.
 
