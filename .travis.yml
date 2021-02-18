@@ -1,4 +1,4 @@
 language: java
 dist: trusty
 jdk: oraclejdk8
-install: mvn clean install -Dapi.key=api.key -Dtest.api.key=test.api.key -DskipTests=true -Dmaven.javadoc.skip=true -B -V
+install: mvn clean install -Dapi.key=apiKey -Dtest.api.key=testApiKey -DskipTests=true -Dmaven.javadoc.skip=true -B -V
