@@ -3,8 +3,6 @@
 
 A small project that takes directions queries and produces directions results in polynomial representation.
 
----
-
 ## Versions ##
 
 * JDK: 1.8.0_251
@@ -12,13 +10,9 @@ A small project that takes directions queries and produces directions results in
 * Mongo: 4.4.4
 * google-maps-services SDK: 0.1.20 (modified)
 
----
-
 ## Sequence Diagram ##
 
 ![Lifecycle Sequence Diagram](./images/lifecycle.svg)
-
----
 
 ## Build ##
 
@@ -33,8 +27,6 @@ Install:
 ```
 mvn install -Dapi.key=api.key -Dtest.api.key=test.api.key -DskipTests=true -Dmaven.javadoc.skip=true -B -V
 ```
-
----
 
 ## Run ##
 
