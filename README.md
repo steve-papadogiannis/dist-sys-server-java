@@ -23,6 +23,12 @@ Clean:
  mvn clean -Dapi.key=api.key -Dtest.api.key=test.api.key -B -V
 ```
 
+Validate:
+
+```
+mvn validate -Dapi.key=api.key -Dtest.api.key=test.api.key -B -V
+```
+
 Install:
 
 ```

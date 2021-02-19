@@ -3,6 +3,7 @@ dist: trusty
 jdk: oraclejdk8
 install:
   - mvn clean -Dapi.key=api.key -Dtest.api.key=test.api.key -B -V
+  - mvn validate -Dapi.key=api.key -Dtest.api.key=test.api.key -B -V
   - mvn install -Dapi.key=api.key -Dtest.api.key=test.api.key -DskipTests=true -Dmaven.javadoc.skip=true -B -V
 script:
   - mvn test -Dapi.key=api.key -Dtest.api.key=test.api.key -B -V
