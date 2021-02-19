@@ -19,6 +19,8 @@ A small project that takes directions queries and produces directions results in
 
 Clean:
 
+Below commands should be issued in project directory:
+
 ```
  mvn clean -Dapi.key=api.key -Dtest.api.key=test.api.key -B -V
 ```
@@ -37,5 +39,16 @@ mvn install -Dapi.key=api.key -Dtest.api.key=test.api.key -DskipTests=true -Dmav
 
 ## Run ##
 
+Below commands should be issued in project directory:
 
+Run Reducer:
 
+```
+java -cp target/classes/ gr.papadogiannis.stefanos.reducers.impl.ReduceWorkerImpl 5559
+```
+
+Run Mapper:
+
+```
+java -cp target/classes/ gr.papadogiannis.stefanos.mappers.impl.MapWorkerImpl 5555 localhost 5559
+```
