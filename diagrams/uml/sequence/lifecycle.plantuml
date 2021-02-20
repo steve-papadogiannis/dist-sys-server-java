@@ -3,13 +3,13 @@ participant "Client Application" as Client
 actor User
 box Service
 boundary Server
-control ServerRunnable
+control ServerRunnable <<Runnable>>
 control Master
 control MapNode
 control ReduceNode
 control MapWorker
 control ReduceWorker
-control ReduceWorkerRunnable
+control ReduceWorkerRunnable <<Runnable>>
 collections MemCache
 end box
 database Mongo
