@@ -17,9 +17,9 @@ A small project that takes directions queries and produces directions results in
 
 ## Build ##
 
-Clean:
-
 Below commands should be issued in project directory:
+
+Clean:
 
 ```
  mvn clean -Dapi.key=api.key -Dtest.api.key=test.api.key -B -V
@@ -44,11 +44,17 @@ Below commands should be issued in project directory:
 Run Reducer:
 
 ```
-java -cp target/classes/ gr.papadogiannis.stefanos.reducers.impl.ReduceWorkerImpl 5559
+ java -classpath "target/dist-sys-server-java-1.0.0-shaded.jar" gr.papadogiannis.stefanos.reducers.impl.ReduceWorkerImpl 5559
 ```
 
 Run Mapper:
 
 ```
-java -cp target/classes/ gr.papadogiannis.stefanos.mappers.impl.MapWorkerImpl 5555 localhost 5559
+java -classpath "target/dist-sys-server-java-1.0.0-shaded.jar" gr.papadogiannis.stefanos.mappers.impl.MapWorkerImpl 5555 localhost 5559
+```
+
+Run Server:
+
+```
+java -classpath "target/dist-sys-server-java-1.0.0-shaded.jar" gr.papadogiannis.stefanos.servers.Server 8080 localhost 5555 localhost 5559
 ```
