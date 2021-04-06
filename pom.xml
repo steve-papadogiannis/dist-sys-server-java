@@ -87,7 +87,7 @@
         <dependency>
             <groupId>org.mongojack</groupId>
             <artifactId>mongojack</artifactId>
-            <version>4.0.2</version>
+            <version>4.2.0</version>
         </dependency>
         <!-- https://mvnrepository.com/artifact/com.google.maps/google-maps-services -->
         <dependency>
